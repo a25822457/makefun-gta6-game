@@ -8,6 +8,8 @@ export function createGameState() {
     money: 250,
     health: 100,
     wanted: 0,
+    // Game time of the last damage taken (drives health regen).
+    lastDamageAt: -Infinity,
     // Seconds since any police last saw the player (drives wanted decay).
     quietSeconds: 0,
     // On-foot state: position is a [x, y, z] array, heading is yaw in radians.
@@ -31,6 +33,7 @@ export function createGameState() {
       missionsCompleted: 0,
       timesBusted: 0,
       timesWasted: 0,
+      shotsFired: 0,
     },
     // Flags systems set for each other: 'busted' | 'wasted' | null.
     endState: null,
@@ -54,6 +57,7 @@ export function addMoney(state, n) {
 /** Hurt the player by n health. Returns true when the player is wasted. */
 export function damagePlayer(state, n) {
   state.health = Math.max(0, state.health - n);
+  state.lastDamageAt = state.time;
   if (state.health <= 0) {
     state.endState = 'wasted';
     state.stats.timesWasted += 1;

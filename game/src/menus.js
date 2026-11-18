@@ -56,9 +56,11 @@ export class MenuSystem {
     state.missionObjective = '';
     if (this.game.missions) this.game.missions.reset();
     if (this.game.player) {
+      // Exit the vehicle FIRST: exitVehicle() places the player beside the
+      // car, which would overwrite the spawn position if it ran after.
+      if (this.game.player.exitVehicle) this.game.player.exitVehicle();
       this.game.player.position.set(spawn.x, 0, spawn.z);
       this.game.player.heading = spawn.heading || 0;
-      if (this.game.player.exitVehicle) this.game.player.exitVehicle();
     }
     state.player.position = [spawn.x, 0, spawn.z];
     state.player.heading = spawn.heading || 0;

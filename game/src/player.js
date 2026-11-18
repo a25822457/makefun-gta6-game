@@ -4,7 +4,7 @@
 // the player walks, runs and jumps; in a car the mesh hides and the player
 // tracks the car. E enters / steals / exits cars and starts missions.
 import { CONFIG } from './config.js';
-import { addWanted } from './state.js';
+import { addWanted, healPlayer } from './state.js';
 import { collideCircle, clampToBounds } from './city.js';
 
 const GRAVITY = 22;
@@ -92,6 +92,14 @@ export class Player {
       this.cameraPitch = Math.max(-1.1, Math.min(1.1, this.cameraPitch));
     }
 
+    // Health regen: after regenDelay seconds without taking damage, health
+    // recovers at regenRate per second (configured in config.js; the values
+    // were there but nothing ever used them, so m3 was a one-way drain).
+    if (this.state && this.state.health > 0 && this.state.health < 100
+      && this.state.time - (this.state.lastDamageAt ?? -Infinity) >= CONFIG.player.regenDelay) {
+      healPlayer(this.state, CONFIG.player.regenRate * dt);
+    }
+
     if (this.onFoot) this._updateOnFoot(dt, input, keys);
     else this._updateDriving(dt, input, keys);
 
@@ -176,14 +184,21 @@ export class Player {
     }
     if (this._punchTimer > 0) this._punchTimer -= dt;
 
-    // Interact: car first, then mission marker.
+    // Interact: a mission marker beats a car. The car you arrive in parks
+    // right next to the marker, so if E preferred the car you could never
+    // start the mission — you would just get back in. Try the marker first;
+    // only enter a car when no mission starts here (tryStartAt returns false
+    // while a mission is already running, so E still enters cars mid-mission).
     if (input.wasPressed(keys.interact)) {
-      const car = this.game.vehicles
-        ? this.game.vehicles.nearestCar(this.position, 3)
-        : null;
-      if (car) this.enterVehicle(car);
-      else if (this.game.missions && typeof this.game.missions.tryStartAt === 'function') {
-        this.game.missions.tryStartAt(this.position);
+      let started = false;
+      if (this.game.missions && typeof this.game.missions.tryStartAt === 'function') {
+        started = this.game.missions.tryStartAt(this.position);
+      }
+      if (!started) {
+        const car = this.game.vehicles
+          ? this.game.vehicles.nearestCar(this.position, 3)
+          : null;
+        if (car) this.enterVehicle(car);
       }
     }
 

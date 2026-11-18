@@ -470,7 +470,12 @@ export function buildCity(scene, rng) {
       m1: { x: -190, z: 205 },
       m2: { x: 208, z: 182 },
       m3: { x: -190, z: 238 },
-      m4: { x: -208, z: -208 },
+      // m4 used to sit at (-208,-208) — the middle of a building (its
+      // collider spans x -222.8..-193.2, z -222.3..-193.7), so the player
+      // could never get within the 7 m start radius and the mission could
+      // never begin. Moved onto the north-south road at x=-182, same
+      // corner of the city, reachable on foot and by car.
+      m4: { x: -182, z: -208 },
       m5: { x: 26, z: -26 },
     },
     police: [

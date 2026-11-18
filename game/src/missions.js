@@ -78,7 +78,12 @@ export class MissionSystem {
         reward: 1200,
         start: S('m4'),
         objectives: [
-          { type: 'timed', target: { x: -200, z: 180 }, text: 'Deliver the package across town — 150 seconds, 3-star chase' },
+          // Drop-off sits on the x=-182 road, not inside the block at
+          // (-200,180): the old point forced the car off-road into the
+          // buildings, so the timed run burned its 150 s manoeuvring.
+          // Now it is one straight 388 m run north on a single road —
+          // the challenge is the 3-star chase, not the parking.
+          { type: 'timed', target: { x: -182, z: 180 }, text: 'Deliver the package across town — 150 seconds, 3-star chase' },
         ],
       },
       {
@@ -432,13 +437,25 @@ export class MissionSystem {
         this.fail('Out of time — the package went cold.');
         return;
       }
+      // A timed delivery still has to ARRIVE: without this check the
+      // objective could only ever fail on timeout, never complete.
+      // (m4 shipped like this — the run ended at the drop-off with time
+      // to spare and still failed.)
+      const t = this._currentTarget();
+      if (t && dist2d(p.x, p.z, t.x, t.z) < 6) {
+        this._advance();
+        return;
+      }
     }
 
     if (this.current.id === 'm5' && this.objectiveIndex === 0 && this._vaultTruck && !this._truckStopped) {
       this._syncCurrentTarget();
       if (inVehicle && speed > 5) {
         const t = this._vaultTruck.position;
-        if (dist2d(p.x, p.z, t.x, t.z) < 4.5) {
+        // Ram = drive into it. The threshold must clear the 4.6 m minimum
+        // centre distance the car-vs-car push-apart enforces, or the check
+        // can never fire (vehicles.update runs before this one each step).
+        if (dist2d(p.x, p.z, t.x, t.z) < 5.0) {
           this._truckHits += 1;
           if (game.audio) game.audio.crash();
           if (this._truckHits >= 3) {

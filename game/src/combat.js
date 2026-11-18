@@ -123,6 +123,9 @@ export class CombatSystem {
     if (this._cooldown > 0) return;
     if (!origin || !dir) return;
     this._cooldown = CONFIG.combat.pistolFireDelay;
+    if (this.game.state && this.game.state.stats) {
+      this.game.state.stats.shotsFired = (this.game.state.stats.shotsFired || 0) + 1;
+    }
 
     const state = this.game.state;
     const now = state ? state.time : 0;
@@ -134,6 +137,11 @@ export class CombatSystem {
     this._muzzle.intensity = 14;
 
     this._raycaster.set(origin, dir);
+    // Refresh the enemies' world matrices before the raycast: the
+    // renderer updates them on render, but the sim can step several
+    // times between renders (and headless renders slowly), so a stale
+    // matrix would test the enemy where it was, not where it is.
+    this.group.updateMatrixWorld(true);
     const targets = [];
     for (const e of this.enemies) {
       if (e.alive) targets.push(e.mesh);
@@ -416,12 +424,24 @@ export class CombatSystem {
       }
     }
 
-    // Left mouse fires the pistol through the centre of the screen.
+    // Left mouse fires the pistol. The shot is a horizontal ray from the
+    // player's chest (y 1.2 m, solidly inside a rival's torso) along the
+    // camera's horizontal forward (the direction the player faces), NOT the
+    // camera's 3D forward: the follow camera sits above the player looking
+    // down at them, so a ray from the camera descends steeply and hits the
+    // ground a few metres out, making distant enemies unhittable at the
+    // default pitch. A horizontal ray at chest height crosses a rival's
+    // torso, so aiming means facing the target — the crosshair (screen
+    // centre) is on the player and the enemy beyond them is on the same line.
     const input = this.game.input;
-    if (input && input.mouseDown && this._armed() && this.game.camera) {
-      const dir = new THREE.Vector3();
-      this.game.camera.getWorldDirection(dir);
-      this.shoot(this.game.camera.position, dir);
+    if (input && input.mouseDown && this._armed() && this.game.player) {
+      const p = this.game.player;
+      const yaw = p.cameraYaw;
+      // Fresh vectors (not the shared temps): shoot() reuses _tmpDir for
+      // the tracer, so the aim direction must not alias it.
+      const dir = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+      const origin = new THREE.Vector3(p.position.x, (p.position.y || 0) + 1.2, p.position.z);
+      this.shoot(origin, dir);
     }
     if (input && typeof input.wasPressed === 'function') {
       if (input.wasPressed(CONFIG.keys.punch)) this.punch();
