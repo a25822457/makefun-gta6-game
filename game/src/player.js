@@ -103,6 +103,15 @@ export class Player {
     if (this.onFoot) this._updateOnFoot(dt, input, keys);
     else this._updateDriving(dt, input, keys);
 
+    // Radio: R cycles the Sol Bay stations, M toggles the radio on/off.
+    // Works on foot and in the car.
+    if (input.wasPressed(keys.radio) && this.game.audio) {
+      this.game.audio.nextStation();
+    }
+    if (input.wasPressed(keys.mute) && this.game.audio) {
+      this.game.audio.toggleMusic();
+    }
+
     this._syncState();
   }
 
