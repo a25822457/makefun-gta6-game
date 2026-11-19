@@ -35,6 +35,7 @@ export class SaveSystem {
       playerPos: [pos[0], pos[1] || 0, pos[2]],
       heading,
       timeOfDay: state.timeOfDay,
+      reputation: this.game.reputation ? this.game.reputation.points : 0,
     };
     try {
       window.localStorage.setItem(this.key, JSON.stringify(data));
