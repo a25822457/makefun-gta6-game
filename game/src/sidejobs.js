@@ -88,6 +88,7 @@ export class SideJobSystem {
     bundle.respawnAt = (this.game.state ? this.game.state.time : 0) + rand(15, 25);
     this.group.remove(bundle.mesh);
     if (this.game.state) addMoney(this.game.state, REWARD);
+    if (this.game.reputation) this.game.reputation.addPoints(5, 'sidejob');
     if (this.game.hud) this.game.hud.toast(`Side job: street cash +$${REWARD}`);
     if (this.game.audio && typeof this.game.audio.chime === 'function') {
       this.game.audio.chime();
