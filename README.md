@@ -24,7 +24,11 @@ at `game/vendor/three.min.js`).
 - **A city to explore on foot and by car** — a 10×10-block procedural city
   with roads, sidewalks, a beach, a pier, and a marina (`game/src/city.js`).
 - **Traffic and pedestrians** who drive the road graph, yield, and flee from
-  gunfire (`game/src/traffic.js`).
+  gunfire — 20 cars and 32 pedestrians keeping the streets alive
+  (`game/src/traffic.js`).
+- **Street-cash side jobs** — glowing cash bundles on the sidewalks, $50 a
+  grab, respawning around the city so free roam always pays
+  (`game/src/sidejobs.js`).
 - **Cars to steal and drive** — parked cars are free; taking a crewed car or a
   police cruiser is a crime (`game/src/vehicles.js`, `game/src/player.js`).
 - **A wanted level with responding police** — stars, pursuit cruisers with
