@@ -494,8 +494,7 @@ export function buildCity(scene, rng) {
   return { group, roadGraph, colliders, spawnPoints, bounds };
 }
 
-/** Push a circle out of building AABBs. Returns {x, z, hit}. */
-export function collideCircle(x, z, radius, colliders) {
+/** Push a circle out of building AABBs. Returns {x, z, hit}. */export function collideCircle(x, z, radius, colliders) {
   let hit = false;
   for (const c of colliders) {
     const cx = Math.max(c.minX, Math.min(x, c.maxX));
@@ -531,4 +530,43 @@ export function clampToBounds(x, z, bounds, margin = 0) {
     x: Math.max(bounds.minX + margin, Math.min(bounds.maxX - margin, x)),
     z: Math.max(bounds.minZ + margin, Math.min(bounds.maxZ - margin, z)),
   };
+}
+
+// ---- districts and streets (for the minimap readout) ----------------------
+// Sol Bay's own neighbourhoods. The pier corner is Pier 9; the east edge
+// is the docks; the south strip is the beachfront; the north is Uptown;
+// the middle is Downtown; the west edge is Palm Drive; the rest is Old Town.
+export function districtAt(x, z) {
+  if (x < -150 && z > 150) return 'Pier 9';
+  if (x > 150) return 'The Docks';
+  if (z > 150) return 'Beachfront';
+  if (z < -150) return 'Uptown';
+  if (Math.abs(x) < 90 && Math.abs(z) < 90) return 'Downtown';
+  if (x < -150) return 'Palm Drive';
+  return 'Old Town';
+}
+
+const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th'];
+
+/** The nearest named road: the four named avenues, else Nth Ave / Nth St. */
+export function streetAt(x, z) {
+  let bestX = ROAD_CENTRES[0];
+  let bestZ = ROAD_CENTRES[0];
+  for (const rc of ROAD_CENTRES) {
+    if (Math.abs(x - rc) < Math.abs(x - bestX)) bestX = rc;
+    if (Math.abs(z - rc) < Math.abs(z - bestZ)) bestZ = rc;
+  }
+  const dx = Math.abs(x - bestX);
+  const dz = Math.abs(z - bestZ);
+  if (dx <= dz) {
+    // Nearest road runs north-south (an avenue, named by its x).
+    if (bestX === 182) return 'Dockside Rd';
+    if (bestX === -182) return 'Marina Blvd';
+    const i = ROAD_CENTRES.indexOf(bestX);
+    return (ORDINALS[i] || (i + 1) + 'th') + ' Ave';
+  }
+  if (bestZ === 182) return 'Bayfront Ave';
+  if (bestZ === -182) return 'Uptown Ave';
+  const i = ROAD_CENTRES.indexOf(bestZ);
+  return (ORDINALS[i] || (i + 1) + 'th') + ' St';
 }
