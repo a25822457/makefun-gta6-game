@@ -48,11 +48,22 @@ at `game/vendor/three.min.js`).
   Street Beats, PIER 88 Tide FM), all synthesized with WebAudio; R switches
   station, M toggles it, and it comes on by itself when you drive
   (`game/src/audio.js`).
-- **Combat** — fists and, once armed, a hitscan pistol against the Breakers,
-  with tracers, muzzle flash, and impact puffs (`game/src/combat.js`).
-- **HUD with minimap** — wanted stars, health, money, missions done, respect
-  level, radio station, objective, speed, and a live minimap
-  (`game/src/hud.js`).
+- **Harbor Arms gun shop** — walk up on foot and press E: buy a Bay Sweeper
+  SMG ($800, 120 rounds) or a Pier Scatter shotgun ($1,200, 24 shells), restock
+  ammo, or put on a Kevlar vest ($400, 100 armour). Weapons switch with
+  1/2/3, each with its own damage, range, and fire rate, plus tracers and a
+  muzzle flash (`game/src/shops.js`, `game/src/combat.js`).
+- **Rook's Garage** — drive in and press G: repair the car ($150) or respray
+  it ($200) — a fresh coat and a new plate clears the heat. Hard crashes wear
+  the car down, and a worn car is slower (`game/src/shops.js`,
+  `game/src/vehicles.js`, `game/src/police.js`).
+- **Armour** — damage hits the vest before it hits you; the HUD shows a blue
+  armour bar under the health bar (`game/src/state.js`, `game/src/hud.js`).
+- **HUD with minimap** — wanted stars, health, armour, money, missions done,
+  respect level, radio station, objective, speed, and a live minimap — plus a
+  world clock (DAWN / DAY / DUSK / NIGHT), the district and street you are on,
+  your current weapon and ammo, and a vehicle card (car type + condition)
+  while driving (`game/src/hud.js`, `game/src/city.js`).
 - **Start screen, pause menu, and save** — localStorage save/continue,
   including your respect level (`game/src/menus.js`, `game/src/save.js`).
 - **Synthesized sound** — engine, sirens, gunshots, crashes, and the radio,
@@ -61,8 +72,8 @@ at `game/vendor/three.min.js`).
 ## Controls
 
 WASD move / drive · Shift run · Space jump / handbrake · E enter car /
-interact · F punch · Mouse shoot (once armed) · R radio station · M music ·
-Esc pause · H help.
+shop · G garage (in car) · F punch · Mouse shoot (once armed) · 1/2/3
+pistol / SMG / shotgun · R radio station · M music · Esc pause · H help.
 
 ## Screenshots
 
