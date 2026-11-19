@@ -193,14 +193,17 @@ export class Player {
     }
     if (this._punchTimer > 0) this._punchTimer -= dt;
 
-    // Interact: a mission marker beats a car. The car you arrive in parks
-    // right next to the marker, so if E preferred the car you could never
-    // start the mission — you would just get back in. Try the marker first;
-    // only enter a car when no mission starts here (tryStartAt returns false
-    // while a mission is already running, so E still enters cars mid-mission).
+    // Interact: a shop beats a mission marker beats a car. The gun shop is
+    // the most specific thing here — if E preferred the car, a parked car
+    // next to Harbor Arms would block the shop. A mission marker beats a car
+    // for the same reason: the car you arrive in parks right next to the
+    // marker, so if E preferred the car you could never start the mission.
     if (input.wasPressed(keys.interact)) {
       let started = false;
-      if (this.game.missions && typeof this.game.missions.tryStartAt === 'function') {
+      if (this.game.shops && typeof this.game.shops.openGunShop === 'function') {
+        started = this.game.shops.openGunShop();
+      }
+      if (!started && this.game.missions && typeof this.game.missions.tryStartAt === 'function') {
         started = this.game.missions.tryStartAt(this.position);
       }
       if (!started) {
@@ -243,6 +246,11 @@ export class Player {
     this.mesh.position.copy(this.position);
 
     if (input.wasPressed(keys.interact)) this.exitVehicle();
+    // Rook's Garage: G opens the garage menu when parked near it.
+    if (this.game.shops && typeof this.game.shops.openGarage === 'function') {
+      const gk = (CONFIG.keys || {}).garage;
+      if (gk && input.wasPressed(gk)) this.game.shops.openGarage();
+    }
     if (input.wasPressed(keys.punch) && this.game.combat
       && typeof this.game.combat.punch === 'function') {
       this.game.combat.punch();
