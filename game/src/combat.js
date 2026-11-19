@@ -113,7 +113,40 @@ export class CombatSystem {
 
   _armed() {
     const s = this.game.state;
-    return !!(s && s.player && s.player.armed);
+    if (!s) return false;
+    const w = (s.weapons && s.weapons.current) || 'pistol';
+    if (w === 'pistol') return !!(s.player && s.player.armed);
+    const owned = s.weapons && s.weapons[w];
+    return !!(owned && owned.owned);
+  }
+
+  /** The current weapon's tuning from CONFIG.weapons. */
+  _weaponDef() {
+    const defs = (this.game.config && this.game.config.weapons) || CONFIG.weapons || {};
+    const w = (this.game.state && this.game.state.weapons && this.game.state.weapons.current) || 'pistol';
+    return defs[w] || defs.pistol;
+  }
+
+  /** Switch to a weapon by key (1 pistol, 2 SMG, 3 shotgun). */
+  switchWeapon(name) {
+    const s = this.game.state;
+    if (!s || !s.weapons) return;
+    if (s.weapons.current === name) return;
+    if (name === 'pistol') {
+      if (!s.player || !s.player.armed) {
+        if (this.game.hud) this.game.hud.toast('No pistol yet — Harbor Arms sells one.');
+        return;
+      }
+    } else {
+      const w = s.weapons[name];
+      if (!w || !w.owned) {
+        if (this.game.hud) this.game.hud.toast('You don\'t own that yet — Harbor Arms sells it.');
+        return;
+      }
+    }
+    s.weapons.current = name;
+    const def = this._weaponDef();
+    if (this.game.hud) this.game.hud.toast(def.name + ' ready.');
   }
 
   // ---- shooting -----------------------------------------------------------
@@ -122,20 +155,36 @@ export class CombatSystem {
     if (!this._armed()) return;
     if (this._cooldown > 0) return;
     if (!origin || !dir) return;
-    this._cooldown = CONFIG.combat.pistolFireDelay;
+    const def = this._weaponDef();
+    // Bought weapons eat ammo; the pistol is infinite. Dry-fire gets a
+    // reminder, not a silent click.
+    const state = this.game.state;
+    if (def.ammoPerBox > 0) {
+      const w = state.weapons && state.weapons[state.weapons.current];
+      if (!w || (w.ammo || 0) <= 0) {
+        if (!this._ammoToastAt || state.time - this._ammoToastAt > 2) {
+          this._ammoToastAt = state.time;
+          if (this.game.hud) this.game.hud.toast('Out of ammo — Harbor Arms sells more.');
+        }
+        return;
+      }
+      w.ammo -= 1;
+    }
+    this._cooldown = def.fireDelay;
     if (this.game.state && this.game.state.stats) {
       this.game.state.stats.shotsFired = (this.game.state.stats.shotsFired || 0) + 1;
     }
 
-    const state = this.game.state;
     const now = state ? state.time : 0;
     this.lastShotAt = now;
     this.lastShotPos.copy(origin);
 
     // Muzzle flash at the camera, fading over the next few frames.
+    // The shotgun's flash is bigger — it is a much louder gun.
     this._muzzle.position.copy(origin);
-    this._muzzle.intensity = 14;
+    this._muzzle.intensity = state.weapons.current === 'shotgun' ? 26 : 14;
 
+    this._raycaster.far = def.range;
     this._raycaster.set(origin, dir);
     // Refresh the enemies' world matrices before the raycast: the
     // renderer updates them on render, but the sim can step several
@@ -149,7 +198,7 @@ export class CombatSystem {
     // Raycast against whole enemy groups, then map the hit child back to
     // the enemy it belongs to.
     const hits = this._raycaster.intersectObjects(targets, true);
-    let end = this._tmpHit.copy(origin).addScaledVector(dir, CONFIG.combat.pistolRange);
+    let end = this._tmpHit.copy(origin).addScaledVector(dir, def.range);
     let hitEnemy = null;
     if (hits.length > 0) {
       const hit = hits[0];
@@ -162,7 +211,7 @@ export class CombatSystem {
     }
 
     if (hitEnemy) {
-      this._damageEnemy(hitEnemy, CONFIG.combat.pistolDamage);
+      this._damageEnemy(hitEnemy, def.damage);
     } else {
       this._spawnPuff(end);
     }
@@ -446,6 +495,11 @@ export class CombatSystem {
     }
     if (input && typeof input.wasPressed === 'function') {
       if (input.wasPressed(CONFIG.keys.punch)) this.punch();
+      // Weapon wheel: 1 pistol, 2 SMG, 3 shotgun.
+      const keys = CONFIG.keys || {};
+      if (input.wasPressed(keys.weapon1)) this.switchWeapon('pistol');
+      else if (input.wasPressed(keys.weapon2)) this.switchWeapon('smg');
+      else if (input.wasPressed(keys.weapon3)) this.switchWeapon('shotgun');
     }
 
     const playerPos = this._playerPos(new THREE.Vector3());
