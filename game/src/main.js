@@ -9,9 +9,11 @@ import { VehicleSystem } from './vehicles.js';
 import { Player } from './player.js';
 import { TrafficSystem } from './traffic.js';
 import { PoliceSystem } from './police.js';
+import { HelicopterSystem } from './helicopter.js';
 import { CombatSystem } from './combat.js';
 import { MissionSystem } from './missions.js';
 import { SideJobSystem } from './sidejobs.js';
+import { ReputationSystem } from './reputation.js';
 import { HUD } from './hud.js';
 import { AudioSystem } from './audio.js';
 import { MenuSystem } from './menus.js';
@@ -46,7 +48,7 @@ class Game {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 1.1;
 
     this.scene = new THREE.Scene();
     this.scene.fog = new THREE.Fog(CONFIG.palette.fog, 220, 900);
@@ -69,9 +71,11 @@ class Game {
     this.player = new Player(game);
     this.traffic = new TrafficSystem(game);
     this.police = new PoliceSystem(game);
+    this.helicopter = new HelicopterSystem(game);
     this.combat = new CombatSystem(game);
     this.missions = new MissionSystem(game);
     this.sidejobs = new SideJobSystem(game);
+    this.reputation = new ReputationSystem(game);
 
     // Player starts at the marina spawn point.
     const spawn = this.city.spawnPoints.player;
@@ -122,6 +126,9 @@ class Game {
       this.player.cameraYaw = this.player.heading;
     }
     if (saved.timeOfDay) this.state.timeOfDay = saved.timeOfDay;
+    if (typeof saved.reputation === 'number' && this.reputation) {
+      this.reputation.setPoints(saved.reputation);
+    }
   }
 
   /** One fixed simulation step. */
@@ -131,6 +138,7 @@ class Game {
     this.vehicles.update(dt);
     this.traffic.update(dt);
     this.police.update(dt);
+    this.helicopter.update(dt);
     this.combat.update(dt);
     this.missions.update(dt);
     this.sidejobs.update(dt);
