@@ -1,4 +1,6 @@
-// Sol Bay: DOM HUD — stars, health, money, minimap, objective, speed, prompts.
+import { districtAt, streetAt } from './city.js';
+
+// Sol Bay: DOM HUD — stars, health, armour, money, minimap, objective, speed, prompts.
 export class HUD {
   constructor(game) {
     this.game = game;
@@ -18,6 +20,15 @@ export class HUD {
       '#solbay-stars .off{color:rgba(255,255,255,.35)}',
       '#solbay-health{width:200px;height:12px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.5);border-radius:6px;margin-top:8px;overflow:hidden}',
       '#solbay-health-fill{height:100%;width:100%;background:#37c24a;transition:width .2s}',
+      '#solbay-armor{width:200px;height:8px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.4);border-radius:4px;margin-top:4px;overflow:hidden}',
+      '#solbay-armor-fill{height:100%;width:0%;background:#4aa3ff;transition:width .2s}',
+      '#solbay-weapon{font-size:13px;font-weight:700;letter-spacing:1px;color:#cfe6ff;margin-top:5px}',
+      '#solbay-clock{position:absolute;top:244px;right:16px;width:220px;text-align:center;font-size:16px;font-weight:700;letter-spacing:1px;text-shadow:0 1px 3px rgba(0,0,0,.8)}',
+      '#solbay-location{position:absolute;top:266px;right:16px;width:220px;text-align:center;font-size:12px;font-weight:700;letter-spacing:1px;color:#b9c7d4;text-shadow:0 1px 3px rgba(0,0,0,.8)}',
+      '#solbay-vehicle{position:absolute;right:20px;bottom:78px;text-align:right;text-shadow:0 1px 3px rgba(0,0,0,.8)}',
+      '#solbay-vehicle-name{font-size:15px;font-weight:800;letter-spacing:1px}',
+      '#solbay-vehicle-cond{width:150px;height:8px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.4);border-radius:4px;margin-top:4px;margin-left:auto;overflow:hidden}',
+      '#solbay-vehicle-cond-fill{height:100%;width:100%;background:#37c24a}',
       '#solbay-money{font-size:22px;font-weight:700;margin-top:6px}',
       '#solbay-missions{font-size:13px;font-weight:700;letter-spacing:1px;color:#ffd23f;margin-top:4px}',
       '#solbay-respect{font-size:12px;font-weight:700;letter-spacing:1px;color:#8fd3ff;margin-top:4px}',
@@ -47,8 +58,12 @@ export class HUD {
       '<div id="solbay-vignette"></div>',
       '<div id="solbay-topleft"><div id="solbay-stars"></div>',
       '<div id="solbay-health"><div id="solbay-health-fill"></div></div>',
+      '<div id="solbay-armor"><div id="solbay-armor-fill"></div></div>',
+      '<div id="solbay-weapon"></div>',
       '<div id="solbay-money">$0</div><div id="solbay-missions">MISSIONS 0/8</div><div id="solbay-respect">RESPECT Lv.1 NOBODY</div><div id="solbay-respect-bar"><div id="solbay-respect-fill"></div></div></div>',
       '<canvas id="solbay-minimap" width="220" height="220"></canvas>',
+      '<div id="solbay-clock"></div><div id="solbay-location"></div>',
+      '<div id="solbay-vehicle"><div id="solbay-vehicle-name"></div><div id="solbay-vehicle-cond"><div id="solbay-vehicle-cond-fill"></div></div></div>',
       '<div id="solbay-objective"><div id="solbay-objective-title"></div><div id="solbay-objective-text"></div></div>',
       '<div id="solbay-speed"><div id="solbay-speed-num"></div><div id="solbay-speed-label"></div></div>',
       '<div id="solbay-prompt"></div>',
@@ -56,12 +71,19 @@ export class HUD {
       '<div id="solbay-dialogue"></div>',
       '<div id="solbay-radio"></div>',
       '<div id="solbay-crosshair"></div>',
-      '<div id="solbay-help">WASD move / drive &nbsp;·&nbsp; E enter car &nbsp;·&nbsp; F punch &nbsp;·&nbsp; Mouse shoot &nbsp;·&nbsp; R radio &nbsp;·&nbsp; M music &nbsp;·&nbsp; Esc pause</div>',
+      '<div id="solbay-help">WASD move / drive &nbsp;·&nbsp; E enter car / shop &nbsp;·&nbsp; G garage &nbsp;·&nbsp; F punch &nbsp;·&nbsp; Mouse shoot &nbsp;·&nbsp; 1/2/3 weapons &nbsp;·&nbsp; R radio &nbsp;·&nbsp; M music &nbsp;·&nbsp; Esc pause</div>',
     ].join('');
     document.body.appendChild(root);
     this.root = root;
     this.starsEl = root.querySelector('#solbay-stars');
     this.healthFill = root.querySelector('#solbay-health-fill');
+    this.armorFill = root.querySelector('#solbay-armor-fill');
+    this.weaponEl = root.querySelector('#solbay-weapon');
+    this.clockEl = root.querySelector('#solbay-clock');
+    this.locationEl = root.querySelector('#solbay-location');
+    this.vehicleEl = root.querySelector('#solbay-vehicle');
+    this.vehicleNameEl = root.querySelector('#solbay-vehicle-name');
+    this.vehicleCondFill = root.querySelector('#solbay-vehicle-cond-fill');
     this.moneyEl = root.querySelector('#solbay-money');
     this.missionsEl = root.querySelector('#solbay-missions');
     this.mapCanvas = root.querySelector('#solbay-minimap');
@@ -272,6 +294,48 @@ export class HUD {
       this.healthFill.style.width = hp + '%';
       this.healthFill.style.background = hp > 50 ? '#37c24a' : hp > 25 ? '#f2a200' : '#e5322d';
     }
+    // Armour bar (Kevlar vest): blue, only visible when wearing armour.
+    if (this.armorFill) {
+      const ar = Math.max(0, Math.min(100, state.armor || 0));
+      this.armorFill.style.width = ar + '%';
+      const bar = this.armorFill.parentElement;
+      if (bar) bar.style.display = ar > 0 ? 'block' : 'none';
+    }
+    // Current weapon + ammo ("Bay Sweeper SMG · 120" / "Pistol · ∞").
+    if (this.weaponEl) {
+      const w = state.weapons || {};
+      const defs = (this.game.config && this.game.config.weapons) || {};
+      let text = '';
+      if (state.player && state.player.armed) {
+        const cur = w.current || 'pistol';
+        const def = defs[cur] || {};
+        const name = (def.name || cur).toUpperCase();
+        if (cur === 'pistol') {
+          text = '⚔ ' + name + ' · ∞';
+        } else {
+          const ammo = w[cur] ? (w[cur].ammo || 0) : 0;
+          text = '⚔ ' + name + ' · ' + ammo;
+        }
+      }
+      if (this.weaponEl.textContent !== text) this.weaponEl.textContent = text;
+    }
+    // Clock: 12-hour time + period (DAWN / DAY / DUSK / NIGHT).
+    if (this.clockEl) {
+      const tod = (state.timeOfDay !== undefined ? state.timeOfDay : 16.5) % 24;
+      const h = Math.floor(tod);
+      const m = Math.floor((tod - h) * 60);
+      const h12 = h % 12 === 0 ? 12 : h % 12;
+      const ampm = h < 12 ? 'AM' : 'PM';
+      const period = tod >= 5 && tod < 8 ? 'DAWN' : tod >= 8 && tod < 17 ? 'DAY' : tod >= 17 && tod < 20 ? 'DUSK' : 'NIGHT';
+      const text = h12 + ':' + String(m).padStart(2, '0') + ' ' + ampm + ' · ' + period;
+      if (this.clockEl.textContent !== text) this.clockEl.textContent = text;
+    }
+    // Location: district + street, under the minimap.
+    if (this.locationEl) {
+      const p = this.game.player && this.game.player.position ? this.game.player.position : { x: 0, z: 0 };
+      const text = districtAt(p.x, p.z) + ' · ' + streetAt(p.x, p.z);
+      if (this.locationEl.textContent !== text) this.locationEl.textContent = text;
+    }
     if (this.moneyEl) {
       const text = '$' + Math.floor(state.money).toLocaleString('en-US');
       if (this.moneyEl.textContent !== text) this.moneyEl.textContent = text;
@@ -302,6 +366,21 @@ export class HUD {
       } else {
         this.speedNumEl.textContent = '';
         this.speedLabelEl.textContent = '';
+      }
+    }
+    // Vehicle card: car type + condition bar, only while driving.
+    if (this.vehicleEl && this.vehicleNameEl && this.vehicleCondFill) {
+      if (player && !player.onFoot && player.vehicle) {
+        const car = player.vehicle;
+        const name = car.type ? car.type.charAt(0).toUpperCase() + car.type.slice(1) : 'Car';
+        const cond = Math.round(car.condition ?? 100);
+        this.vehicleEl.style.display = 'block';
+        const nameText = name + ' · ' + cond + '%';
+        if (this.vehicleNameEl.textContent !== nameText) this.vehicleNameEl.textContent = nameText;
+        this.vehicleCondFill.style.width = cond + '%';
+        this.vehicleCondFill.style.background = cond > 50 ? '#37c24a' : cond > 25 ? '#f2a200' : '#e5322d';
+      } else {
+        this.vehicleEl.style.display = 'none';
       }
     }
     // Crosshair when armed.
