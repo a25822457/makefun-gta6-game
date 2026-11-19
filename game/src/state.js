@@ -7,11 +7,19 @@ export function createGameState() {
     timeOfDay: 16.5, // late afternoon: long warm shadows, golden light
     money: 250,
     health: 100,
+    armor: 0, // Kevlar vest: damage hits armour before health
     wanted: 0,
     // Game time of the last damage taken (drives health regen).
     lastDamageAt: -Infinity,
     // Seconds since any police last saw the player (drives wanted decay).
     quietSeconds: 0,
+    // Weapons: the pistol is the starter (owned mirrors player.armed);
+    // the SMG and shotgun are bought at Harbor Arms, with bought ammo.
+    weapons: {
+      current: 'pistol',
+      smg: { owned: false, ammo: 0 },
+      shotgun: { owned: false, ammo: 0 },
+    },
     // On-foot state: position is a [x, y, z] array, heading is yaw in radians.
     player: {
       position: [0, 0, 0],
@@ -54,9 +62,16 @@ export function addMoney(state, n) {
   state.money = Math.max(0, state.money + n);
 }
 
-/** Hurt the player by n health. Returns true when the player is wasted. */
+/** Hurt the player by n health. Armour absorbs first; the rest hits health.
+ *  Returns true when the player is wasted. */
 export function damagePlayer(state, n) {
-  state.health = Math.max(0, state.health - n);
+  let rest = n;
+  if (state.armor > 0) {
+    const absorbed = Math.min(state.armor, rest);
+    state.armor -= absorbed;
+    rest -= absorbed;
+  }
+  state.health = Math.max(0, state.health - rest);
   state.lastDamageAt = state.time;
   if (state.health <= 0) {
     state.endState = 'wasted';
