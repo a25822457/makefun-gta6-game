@@ -125,9 +125,12 @@ export function buildCarMesh(type) {
     wheels.push(wheel);
   }
 
-  group.userData = { type, wheels, lightBar, wheelRadius: WHEEL_R };
+  group.userData = { type, wheels, lightBar, wheelRadius: WHEEL_R, paint };
   return group;
 }
+
+/** Respray paint colours the garage cycles through. */
+export const RESPRAY_COLORS = [0xc22727, 0x4a6fa5, 0xf2c200, 0x2e7f9e, 0x5b7d4f, 0x8a5a2e, 0xe8e2d4, 0x1a1a1a];
 
 export class VehicleSystem {
   constructor(game) {
@@ -152,6 +155,9 @@ export class VehicleSystem {
       driver: null,
       color: tuning.color,
       tuning,
+      // Condition 0-100: hard crashes wear it down, and a worn car is
+      // slower. Only the player's car tracks it (traffic never repairs).
+      condition: 100,
     };
     group.position.set(x, 0, z);
     group.rotation.y = heading;
@@ -210,6 +216,7 @@ export class VehicleSystem {
       car.position.z += fz * car.speed * dt;
 
       // Building collision: circle vs AABB, then clamp to the city.
+      // A hard wall scrape dents the player's car (condition loss).
       if (colliders.length) {
         const preSpeed = car.speed;
         const hit = collideCircle(car.position.x, car.position.z, 1.3, colliders);
@@ -218,6 +225,13 @@ export class VehicleSystem {
           car.position.z = hit.z;
           car.speed *= 0.45; // scrub speed off a wall scrape
           if (this.game.audio && Math.abs(preSpeed) > 8) this.game.audio.crash();
+          if (car.driver === 'player' && Math.abs(preSpeed) > (CONFIG.carCondition.wallSpeed || 10)) {
+            const dmg = Math.min(
+              CONFIG.carCondition.wallDamage || 6,
+              (Math.abs(preSpeed) - (CONFIG.carCondition.wallSpeed || 10)) * 0.5,
+            );
+            car.condition = Math.max(0, (car.condition ?? 100) - dmg);
+          }
         }
       }
       if (bounds) {
@@ -233,7 +247,8 @@ export class VehicleSystem {
       car.group.rotation.y = car.heading;
     }
 
-    // Car-vs-car: simple circle push-apart + speed loss.
+    // Car-vs-car: simple circle push-apart + speed loss. A hard hit dents
+    // the player's car.
     for (let i = 0; i < this.cars.length; i++) {
       for (let j = i + 1; j < this.cars.length; j++) {
         const a = this.cars[i];
@@ -251,8 +266,18 @@ export class VehicleSystem {
           a.position.z -= nz * push;
           b.position.x += nx * push;
           b.position.z += nz * push;
+          const rel = Math.abs(a.speed - b.speed);
           a.speed *= 0.8;
           b.speed *= 0.8;
+          if (rel > (CONFIG.carCondition.crashSpeed || 8)) {
+            const dmg = Math.min(
+              CONFIG.carCondition.crashDamage || 5,
+              (rel - (CONFIG.carCondition.crashSpeed || 8)) * 0.4,
+            );
+            for (const c of [a, b]) {
+              if (c.driver === 'player') c.condition = Math.max(0, (c.condition ?? 100) - dmg);
+            }
+          }
         }
       }
     }
@@ -273,7 +298,11 @@ export class VehicleSystem {
 
   _drivePlayerCar(car, dt, input, keys) {
     const t = car.tuning;
-    const top = t.topSpeed / 3.6; // km/h -> m/s
+    // A worn car is slower: condition 100 is full speed, 0 is the floor.
+    const cond = (car.condition ?? 100) / 100;
+    const perf = (CONFIG.carCondition.minPerformance || 0.55)
+      + (1 - (CONFIG.carCondition.minPerformance || 0.55)) * cond;
+    const top = (t.topSpeed / 3.6) * perf; // km/h -> m/s
     const rev = t.reverseSpeed / 3.6;
     const handbrake = input.isDown(keys.handbrake);
 
@@ -289,7 +318,7 @@ export class VehicleSystem {
 
     // Longitudinal: W accelerates, S brakes then reverses.
     if (input.isDown(keys.forward)) {
-      car.speed += t.accel * dt;
+      car.speed += t.accel * perf * dt;
     } else if (input.isDown(keys.back)) {
       if (car.speed > 0.5) car.speed -= t.accel * 1.6 * dt; // brake
       else car.speed -= t.accel * 0.7 * dt; // reverse
@@ -304,6 +333,29 @@ export class VehicleSystem {
     // Clamp to top / reverse speed.
     if (car.speed > top) car.speed = top;
     if (car.speed < -rev) car.speed = -rev;
+  }
+
+  /** Garage: restore a car to full condition. Returns the cost paid. */
+  repair(car) {
+    if (!car) return 0;
+    car.condition = 100;
+    return 1;
+  }
+
+  /** Garage: repaint the car a new colour. Returns the new colour hex. */
+  respray(car) {
+    if (!car) return null;
+    const colors = RESPRAY_COLORS;
+    let next = colors[Math.floor(Math.random() * colors.length)];
+    if (colors.length > 1) {
+      while (next === car.color) next = colors[Math.floor(Math.random() * colors.length)];
+    }
+    car.color = next;
+    const paint = car.group && car.group.userData ? car.group.userData.paint : null;
+    if (paint && paint.color && typeof paint.color.setHex === 'function') {
+      paint.color.setHex(next);
+    }
+    return next;
   }
 
   reset() {
