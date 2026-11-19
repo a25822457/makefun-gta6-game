@@ -29,6 +29,12 @@ export class SaveSystem {
     const data = {
       money: state.money,
       health: state.health,
+      armor: state.armor || 0,
+      weapons: state.weapons ? {
+        current: state.weapons.current,
+        smg: state.weapons.smg ? { owned: !!state.weapons.smg.owned, ammo: state.weapons.smg.ammo || 0 } : { owned: false, ammo: 0 },
+        shotgun: state.weapons.shotgun ? { owned: !!state.weapons.shotgun.owned, ammo: state.weapons.shotgun.ammo || 0 } : { owned: false, ammo: 0 },
+      } : { current: 'pistol', smg: { owned: false, ammo: 0 }, shotgun: { owned: false, ammo: 0 } },
       missionsDone: Array.isArray(state.missionsDone) ? [...state.missionsDone] : [],
       currentMission: state.currentMission,
       armed: !!(state.player && state.player.armed),
