@@ -34,22 +34,35 @@ at `game/vendor/three.min.js`).
 - **A wanted level with responding police** — stars, pursuit cruisers with
   flashing light bars, foot cops, and busted/wasted screens
   (`game/src/police.js`).
-- **Missions and a story** — a 5-mission chain for Delia Voss, from a courier
-  run to the vault-truck finale, with briefings, markers, rewards, and retries
-  (`game/src/missions.js`).
-- **Combat** — fists and, once armed, a hitscan pistol against the Breakers
-  (`game/src/combat.js`).
-- **HUD with minimap** — wanted stars, health, money, objective, speed, and a
-  live minimap (`game/src/hud.js`).
-- **Start screen, pause menu, and save** — localStorage save/continue
-  (`game/src/menus.js`, `game/src/save.js`).
-- **Synthesized sound** — engine, sirens, gunshots, crashes, and a music loop,
+- **The Bay Patrol helicopter** — at 3 stars and up, a harbour-patrol chopper
+  circles overhead and pins you with a searchlight while the chase is on
+  (`game/src/helicopter.js`).
+- **Missions and a story** — an 8-mission chain for Delia Voss, from a courier
+  run to taking back Pier 9: a beachfront sprint, an escort run, and a
+  five-star finale, with briefings, character dialogue, markers, rewards,
+  and retries (`game/src/missions.js`).
+- **Respect** — jobs, escapes, kills and street cash earn respect, from Nobody
+  up to King of the Bay; every level raises mission pay by 5%
+  (`game/src/reputation.js`).
+- **Sol Bay radio** — three home-grown stations (BAY 98.5 Dusk FM, SOL 107
+  Street Beats, PIER 88 Tide FM), all synthesized with WebAudio; R switches
+  station, M toggles it, and it comes on by itself when you drive
+  (`game/src/audio.js`).
+- **Combat** — fists and, once armed, a hitscan pistol against the Breakers,
+  with tracers, muzzle flash, and impact puffs (`game/src/combat.js`).
+- **HUD with minimap** — wanted stars, health, money, missions done, respect
+  level, radio station, objective, speed, and a live minimap
+  (`game/src/hud.js`).
+- **Start screen, pause menu, and save** — localStorage save/continue,
+  including your respect level (`game/src/menus.js`, `game/src/save.js`).
+- **Synthesized sound** — engine, sirens, gunshots, crashes, and the radio,
   all generated with WebAudio, no audio files (`game/src/audio.js`).
 
 ## Controls
 
 WASD move / drive · Shift run · Space jump / handbrake · E enter car /
-interact · F punch · Mouse shoot (once armed) · M music · Esc pause · H help.
+interact · F punch · Mouse shoot (once armed) · R radio station · M music ·
+Esc pause · H help.
 
 ## Screenshots
 
