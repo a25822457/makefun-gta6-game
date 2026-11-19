@@ -1,4 +1,4 @@
-// Sol Bay: the five-mission story chain for Jax "Rook" Marlowe.
+// Sol Bay: the eight-mission story chain for Jax "Rook" Marlowe.
 // All names, places and dialogue are original to this game.
 import { addMoney, addWanted } from './state.js';
 
@@ -42,6 +42,8 @@ export class MissionSystem {
         id: 'm1',
         title: 'Welcome Back',
         briefing: 'Delia: "Rook. You\'re back in Sol Bay at last. Take my courier van from the marina and run it to the drop-off uptown. Drive clean, and don\'t keep the client waiting."',
+        briefLine: 'Rook. You\'re back in Sol Bay at last. Take my van and run it uptown.',
+        completeLine: 'Clean run. The client paid up. You\'re back in the game, Rook.',
         reward: 400,
         start: S('m1'),
         objectives: [
@@ -53,6 +55,8 @@ export class MissionSystem {
         id: 'm2',
         title: 'Borrowed Wheels',
         briefing: 'Delia: "A client wants a sports car, no questions asked. There\'s one parked at the docks. Take it — and if the harbour patrol spots you, lose them before you call me."',
+        briefLine: 'A client wants a sports car, no questions asked. Take it — and lose the tail.',
+        completeLine: 'Nice wheels. The client\'s happy. But the harbour patrol\'s got your plate now.',
         reward: 600,
         start: S('m2'),
         objectives: [
@@ -64,6 +68,8 @@ export class MissionSystem {
         id: 'm3',
         title: 'Payback at Pier 9',
         briefing: 'Delia: "The Breakers took a package of mine at Pier 9. They think the pier is theirs now. Take the pistol, clear the warehouse, and bring my package home."',
+        briefLine: 'The Breakers took my package at Pier 9. Clear the warehouse and bring it home.',
+        completeLine: 'That\'s my package. The Breakers won\'t forget this — and neither will I.',
         reward: 900,
         start: S('m3'),
         objectives: [
@@ -75,6 +81,8 @@ export class MissionSystem {
         id: 'm4',
         title: 'The Long Way Home',
         briefing: 'Delia: "That package is hot, Rook — the whole bay wants it. You\'ve got 150 seconds to get it across town, and the patrol is already on you. Don\'t stop for anything."',
+        briefLine: 'That package is hot, Rook. 150 seconds across town, and the patrol is already on you.',
+        completeLine: 'Across town in one piece. You\'re faster than the whole bay, Rook.',
         reward: 1200,
         start: S('m4'),
         objectives: [
@@ -90,6 +98,8 @@ export class MissionSystem {
         id: 'm5',
         title: 'King of the Bay',
         briefing: 'Delia: "One last job, Rook. A vault truck is rolling through downtown with the Breakers\' whole season in it. Stop that truck, take the loot, shake the chase, and bring it to me. Do this, and the bay is yours."',
+        briefLine: 'A vault truck is rolling through downtown with the Breakers\' whole season in it. Stop it.',
+        completeLine: 'The vault money is ours. One more thing — Vic\'s still out there. This isn\'t over.',
         reward: 2500,
         start: S('m5'),
         objectives: [
@@ -97,6 +107,56 @@ export class MissionSystem {
           { type: 'goto', target: S('m5'), text: 'Grab the loot from the vault truck' },
           { type: 'escape', target: null, text: 'Escape the 4-star chase' },
           { type: 'deliver', target: S('m1'), text: 'Deliver the loot to Delia at the marina' },
+        ],
+      },
+      {
+        id: 'm6',
+        title: 'Bayfront Dash',
+        briefing: 'Delia: "The Breakers\' best driver just called you slow, Rook. There\'s a sprint down the beachfront — three markers, one winner, and the whole beach watching. Shut him up."',
+        briefLine: 'The Breakers\' best driver just called you slow. Sprint the beachfront — three markers, one winner.',
+        completeLine: 'You smoked him. The whole beach saw it. The Breakers are running out of pride.',
+        reward: 1500,
+        start: S('m6'),
+        objectives: [
+          // A checkpoint sprint, not a hard clock: the headless autopilot
+          // re-routes when it gets wedged, so a tight timer would fail a
+          // run a human finishes in 30 s. The race is the three markers
+          // down the beachfront in the sports car.
+          // All three checkpoints sit ON the beachfront road (z=182) at
+          // real intersections — z=154 is the middle of a block, and the
+          // autopilot cannot drive through buildings to reach it.
+          { type: 'drive', target: { x: -78, z: 182 }, text: 'Beachfront sprint — checkpoint 1' },
+          { type: 'drive', target: { x: 26, z: 182 }, text: 'Beachfront sprint — checkpoint 2' },
+          { type: 'drive', target: { x: 130, z: 182 }, text: 'Beachfront sprint — finish at the docks' },
+        ],
+      },
+      {
+        id: 'm7',
+        title: 'Delia\'s Run',
+        briefing: 'Delia: "Vic\'s crew found my downtown hideout, Rook. Come get me — and don\'t let them follow you to the marina. If they tail you, lose them after I\'m safe."',
+        briefLine: 'Vic\'s crew found my downtown hideout. Come get me — and don\'t let them follow you home.',
+        completeLine: 'Safe. You drive like the bay\'s on fire, Rook. I owe you one.',
+        reward: 1800,
+        start: S('m7'),
+        objectives: [
+          { type: 'goto', target: S('m7'), text: 'Pick up Delia at her downtown hideout' },
+          { type: 'deliver', target: S('m1'), text: 'Get Delia to the marina safehouse' },
+          { type: 'escape', target: null, text: 'Lose the 2-star tail' },
+        ],
+      },
+      {
+        id: 'm8',
+        title: 'Take Back the Pier',
+        briefing: 'Delia: "Vic\'s making his last stand at Pier 9, Rook. Six of his best, and the whole season\'s money in the warehouse. Take the pier back — and take the bay with it."',
+        briefLine: 'Vic\'s making his last stand at Pier 9. Six of his best, and the season\'s money in the warehouse. Take it back.',
+        completeLine: 'The pier is yours. The Breakers are finished. The whole bay knows your name now, Rook.',
+        reward: 4000,
+        start: S('m8'),
+        objectives: [
+          { type: 'kill', target: S('m8'), count: 6, text: 'Clear the 6 Breakers holding Pier 9' },
+          { type: 'goto', target: { x: S('m8').x + 6, z: S('m8').z + 4 }, text: 'Grab the season\'s money in the warehouse' },
+          { type: 'escape', target: null, text: 'Escape the 5-star chase' },
+          { type: 'deliver', target: S('m1'), text: 'Bring the money to Delia at the marina' },
         ],
       },
     ];
@@ -115,6 +175,9 @@ export class MissionSystem {
       m3: { x: 200, z: -110 },
       m4: { x: 200, z: -110 },
       m5: { x: 0, z: -40 },
+      m6: { x: -182, z: 182 },
+      m7: { x: 50, z: -78 },
+      m8: { x: -190, z: 238 },
     };
     return fallback[id] || { x: 0, z: 0 };
   }
@@ -249,6 +312,22 @@ export class MissionSystem {
       def.objectives[1].target = def.start;
       def.objectives[3].target = this._startPos('m1');
     }
+    if (def.id === 'm6') {
+      // The race runs east along the beachfront road (z=182) from the
+      // west end to the docks, at real intersections.
+      def.objectives[0].target = { x: -78, z: 182 };
+      def.objectives[1].target = { x: 26, z: 182 };
+      def.objectives[2].target = { x: 130, z: 182 };
+    }
+    if (def.id === 'm7') {
+      def.objectives[0].target = def.start;
+      def.objectives[1].target = this._startPos('m1');
+    }
+    if (def.id === 'm8') {
+      def.objectives[0].target = def.start;
+      def.objectives[1].target = { x: def.start.x + 6, z: def.start.z + 4 };
+      def.objectives[3].target = this._startPos('m1');
+    }
   }
 
   start(id) {
@@ -283,6 +362,7 @@ export class MissionSystem {
     if (this.game.hud) {
       this.game.hud.toast(`${def.title} — ${def.briefing}`);
       this.game.hud.setObjective(def.objectives[0].text, def.title);
+      if (def.briefLine) this.game.hud.dialogue('Delia', def.briefLine);
     }
     if (id === 'm1' && this.game.vehicles && this.game.vehicles.spawnCar) {
       this.game.vehicles.spawnCar('van', def.start.x + 4, def.start.z, 0);
@@ -309,6 +389,18 @@ export class MissionSystem {
       const truck = this.game.vehicles.spawnCar('truck', def.start.x, def.start.z, Math.PI / 2);
       this._vaultTruck = truck || null;
     }
+    if (id === 'm6' && this.game.vehicles && this.game.vehicles.spawnCar) {
+      // The race needs a fast car at the start line, facing east down the
+      // beachfront road toward the checkpoints.
+      this.game.vehicles.spawnCar('sports', def.start.x + 4, def.start.z, -Math.PI / 2);
+    }
+    if (id === 'm8') {
+      this.game.state.player.armed = true;
+      if (this.game.combat && this.game.combat.spawnSquad) {
+        this.game.combat.spawnSquad(def.start.x, def.start.z, 6);
+      }
+      this._spawnPackage(def.start.x + 6, def.start.z + 4);
+    }
     this._setObjectiveText();
     this._showMarker(this._currentTarget());
     if (this.game.audio) this.game.audio.chime();
@@ -316,6 +408,11 @@ export class MissionSystem {
   }
 
   _advance() {
+    const completed = this.current ? this.current.objectives[this.objectiveIndex] : null;
+    // Shaking a chase off earns respect.
+    if (completed && completed.type === 'escape' && this.game.reputation) {
+      this.game.reputation.addPoints(40, 'escape');
+    }
     this.objectiveIndex += 1;
     if (this.objectiveIndex >= this.current.objectives.length) {
       this.complete();
@@ -331,6 +428,18 @@ export class MissionSystem {
       if (this.game.hud) this.game.hud.toast('4-star chase — lose them, then get to Delia!');
       if (this.game.audio) this.game.audio.siren(true);
     }
+    if (this.current.id === 'm7' && this.objectiveIndex === 1) {
+      // The Breakers spotted Delia getting in — a 2-star tail.
+      addWanted(this.game.state, 2);
+      if (this.game.hud) this.game.hud.toast('2-star chase — get Delia to the marina!');
+      if (this.game.audio) this.game.audio.siren(true);
+    }
+    if (this.current.id === 'm8' && this.objectiveIndex === 2) {
+      this._clearPackage();
+      addWanted(this.game.state, 5);
+      if (this.game.hud) this.game.hud.toast('5-star chase — the whole bay is on you!');
+      if (this.game.audio) this.game.audio.siren(true);
+    }
     this._setObjectiveText();
     this._showMarker(this._currentTarget());
     if (this.game.audio) this.game.audio.chime();
@@ -339,7 +448,10 @@ export class MissionSystem {
   complete() {
     if (!this.current) return;
     const done = this.current;
-    addMoney(this.game.state, done.reward);
+    // Respect raises the pay: +5% per level above 1.
+    const rep = this.game.reputation;
+    const reward = rep ? Math.round(done.reward * rep.multiplier()) : done.reward;
+    addMoney(this.game.state, reward);
     if (!this.game.state.missionsDone.includes(done.id)) {
       this.game.state.missionsDone.push(done.id);
     }
@@ -357,13 +469,17 @@ export class MissionSystem {
       this.game.audio.jingle();
       this.game.audio.siren(false);
     }
+    const leveledUp = rep ? rep.addPoints(100, 'mission') : false;
     if (this.game.hud) {
-      this.game.hud.toast(`Mission complete: ${done.title} — +$${done.reward}`);
+      let msg = `Mission complete: ${done.title} — +$${reward}`;
+      if (leveledUp && rep) msg += ` Respect up — now ${rep.title()} (Lv.${rep.level}).`;
+      this.game.hud.toast(msg);
       this.game.hud.setObjective('', '');
+      if (done.completeLine) this.game.hud.dialogue('Delia', done.completeLine);
     }
     if (this.game.save) this.game.save.save();
     if (this.game.menus && this.game.menus.showMissionComplete) {
-      this.game.menus.showMissionComplete(done.title, done.reward, done.id === 'm5');
+      this.game.menus.showMissionComplete(done.title, reward, done.id === 'm8');
     }
   }
 
@@ -442,7 +558,7 @@ export class MissionSystem {
       // (m4 shipped like this — the run ended at the drop-off with time
       // to spare and still failed.)
       const t = this._currentTarget();
-      if (t && dist2d(p.x, p.z, t.x, t.z) < 6) {
+      if (t && dist2d(p.x, p.z, t.x, t.z) < 9) {
         this._advance();
         return;
       }
