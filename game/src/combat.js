@@ -276,6 +276,7 @@ export class CombatSystem {
     const state = this.game.state;
     if (state) {
       state.stats.kills += 1;
+      if (this.game.reputation) this.game.reputation.addPoints(10, 'kill');
       if (enemy.isCop) {
         state.stats.copsKilled += 1;
         this._reportCrime(CONFIG.wanted.killCopCrime);
