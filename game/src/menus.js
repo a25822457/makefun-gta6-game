@@ -84,7 +84,7 @@ export class MenuSystem {
     this._show('title', [
       '<h1>SOL BAY</h1>',
       '<p>Jax "Rook" Marlowe is back in the city that made him — and the crew that ran him out is still holding the bay. Drive, steal, settle scores, and take the crown back, one job at a time.</p>',
-      '<div class="controls">WASD — move / drive &nbsp;·&nbsp; Shift — run<br>Space — jump / handbrake &nbsp;·&nbsp; E — enter car / interact<br>F — punch &nbsp;·&nbsp; Mouse — shoot (once armed) &nbsp;·&nbsp; R — radio station<br>M — music on/off &nbsp;·&nbsp; Esc — pause &nbsp;·&nbsp; H — help</div>',
+      '<div class="controls">WASD — move / drive &nbsp;·&nbsp; Shift — run<br>Space — jump / handbrake &nbsp;·&nbsp; E — enter car / shop &nbsp;·&nbsp; G — garage (in car)<br>F — punch &nbsp;·&nbsp; Mouse — shoot (once armed) &nbsp;·&nbsp; 1/2/3 — pistol / SMG / shotgun<br>R — radio station &nbsp;·&nbsp; M — music on/off &nbsp;·&nbsp; Esc — pause &nbsp;·&nbsp; H — help</div>',
       '<button id="solbay-start">Start — back to Sol Bay</button>',
       continueBtn,
       '<p class="fine">An original game. Sol Bay, its people and its stories are invented here.</p>',
