@@ -84,6 +84,34 @@ export const CONFIG = {
     punchRange: 2.2,
   },
 
+  // Buyable weapons (Harbor Arms). The pistol is the starter: infinite
+  // ammo, granted in mission 3 (or bought early). The SMG is fast and
+  // hungry; the shotgun is a close-range burst. Ammo is bought by the box.
+  weapons: {
+    pistol: { name: 'Pistol', price: 250, damage: 34, range: 60, fireDelay: 0.28, ammoPerBox: 0, ammoPrice: 0 },
+    smg: { name: 'Bay Sweeper SMG', price: 800, damage: 22, range: 55, fireDelay: 0.11, ammoPerBox: 120, ammoPrice: 80 },
+    shotgun: { name: 'Pier Scatter', price: 1200, damage: 90, range: 35, fireDelay: 0.9, ammoPerBox: 24, ammoPrice: 60 },
+  },
+
+  // Shops. Harbor Arms sells guns and armour; Rook's Garage fixes cars.
+  shops: {
+    armorPrice: 400, // Kevlar Vest: full 100 armour
+    repairPrice: 150, // full condition restore
+    resprayPrice: 200, // new paint + clears the wanted level
+    gunShop: { x: 182, z: 78, name: 'Harbor Arms' },
+    garage: { x: -182, z: 78, name: "Rook's Garage" },
+  },
+
+  // Car condition: crashes wear a car down; a worn car is slower.
+  // Damage only accrues on hard hits, so a careful driver stays near 100.
+  carCondition: {
+    wallSpeed: 10, // wall scrape only hurts above this m/s
+    wallDamage: 6, // max damage from one wall scrape
+    crashSpeed: 8, // car-vs-car only hurts above this relative m/s
+    crashDamage: 5, // max damage from one collision
+    minPerformance: 0.55, // a wrecked car keeps 55% of its top speed
+  },
+
   // Key bindings (KeyboardEvent.code values).
   keys: {
     forward: 'KeyW',
@@ -94,6 +122,10 @@ export const CONFIG = {
     jump: 'Space',
     handbrake: 'Space',
     interact: 'KeyE',
+    garage: 'KeyG',
+    weapon1: 'Digit1',
+    weapon2: 'Digit2',
+    weapon3: 'Digit3',
     punch: 'KeyF',
     radio: 'KeyR',
     mute: 'KeyM',
