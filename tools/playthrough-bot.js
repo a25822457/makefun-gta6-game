@@ -335,6 +335,12 @@
       }
       if (best) aimAtEnemy(best);
       input._mouseDown = true;
+      // Strafe while shooting: a stationary shooter gets busted by any foot
+      // cop that walks up (bust needs player speed < 1.5), so keep moving
+      // sideways — alternating every half second keeps the aim on target
+      // while the player stays too fast to be grabbed.
+      const strafe = Math.floor(steps / 30) % 2 === 0 ? 'KeyA' : 'KeyD';
+      setKeys([strafe]);
       step(1);
       steps += 1;
       if (S.health < minHealth) minHealth = S.health;
