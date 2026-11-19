@@ -113,6 +113,26 @@ export class PoliceSystem {
     this._decayTimer = 0;
   }
 
+  /** A fresh respray makes the car unrecognisable: the heat is gone, the
+   *  cruisers stand down and the foot cops go back to their cars. */
+  clearHeat() {
+    const state = this.game.state;
+    if (state) {
+      state.wanted = 0;
+      state.quietSeconds = 0;
+    }
+    this._decayTimer = 0;
+    while (this.cars.length > 0) {
+      this._removePoliceCar(this.cars[this.cars.length - 1]);
+      this.cars.pop();
+    }
+    while (this.cops.length > 0) this._removeCop(this.cops[0]);
+    this._setSiren(false);
+    if (this.game.audio && typeof this.game.audio.siren === 'function') {
+      this.game.audio.siren(false);
+    }
+  }
+
   // ---- spawning ---------------------------------------------------------
 
   _spawnPoliceCar(playerPos) {
