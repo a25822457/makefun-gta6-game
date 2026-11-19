@@ -143,10 +143,10 @@ export class MissionSystem {
     disc.rotation.x = -Math.PI / 2;
     disc.position.y = 0.35;
     group.add(disc);
-    const iconGeo = new THREE.ConeGeometry(0.7, 1.6, 4);
+    const iconGeo = new THREE.ConeGeometry(0.45, 1.1, 4);
     const iconMat = new THREE.MeshBasicMaterial({ color: 0xffd23f });
     const icon = new THREE.Mesh(iconGeo, iconMat);
-    icon.position.y = 4.2;
+    icon.position.y = 3.4;
     icon.rotation.y = Math.PI / 4;
     group.add(icon);
     group.position.set(target.x, 0, target.z);
@@ -411,7 +411,7 @@ export class MissionSystem {
     if (!this.current) return;
     this._pulse += dt;
     if (this._markerIcon) {
-      this._markerIcon.position.y = 4.2 + Math.sin(this._pulse * 3) * 0.4;
+      this._markerIcon.position.y = 3.4 + Math.sin(this._pulse * 3) * 0.3;
       this._markerIcon.rotation.y += dt * 2;
     }
     if (this._markerRing) {

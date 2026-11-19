@@ -11,6 +11,7 @@ import { TrafficSystem } from './traffic.js';
 import { PoliceSystem } from './police.js';
 import { CombatSystem } from './combat.js';
 import { MissionSystem } from './missions.js';
+import { SideJobSystem } from './sidejobs.js';
 import { HUD } from './hud.js';
 import { AudioSystem } from './audio.js';
 import { MenuSystem } from './menus.js';
@@ -70,6 +71,7 @@ class Game {
     this.police = new PoliceSystem(game);
     this.combat = new CombatSystem(game);
     this.missions = new MissionSystem(game);
+    this.sidejobs = new SideJobSystem(game);
 
     // Player starts at the marina spawn point.
     const spawn = this.city.spawnPoints.player;
@@ -131,6 +133,7 @@ class Game {
     this.police.update(dt);
     this.combat.update(dt);
     this.missions.update(dt);
+    this.sidejobs.update(dt);
     this.hud.update(dt);
     this.audio.update(dt);
     this.updateCamera(dt);

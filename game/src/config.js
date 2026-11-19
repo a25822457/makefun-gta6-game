@@ -51,8 +51,8 @@ export const CONFIG = {
   },
 
   traffic: {
-    cars: 14,
-    pedestrians: 20,
+    cars: 20,
+    pedestrians: 32,
     carSpeed: 11, // m/s cruising
     pedSpeed: 1.4,
   },

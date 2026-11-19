@@ -139,18 +139,30 @@ export function stageShot(name, game) {
     game.hud.setObjective('Clear the pier warehouse — grab the package');
     holdDrive(game, false);
     game.updateSteps(90, step); // 3 s of shootout
+    // Reframe to a fixed three-quarter angle from the north: the follow
+    // camera sits right behind the player staring at the marker beacon, so
+    // the beacon fills the centre of the frame, and a camera south of the
+    // player puts a big empty beach in the foreground. From the north the
+    // player and the Breakers read clearly, the beacon sits off to one
+    // side, and the pier and water are the backdrop. The sim is frozen
+    // after this, so the camera stays where it is put.
+    const p = game.player.position;
+    game.camera.position.set(p.x - 6, 4.5, p.z - 11);
+    game.camera.lookAt(p.x, 1.5, p.z + 1);
     return;
   }
 
   if (name === 'city') {
     // High aerial of downtown and the beach at sunset, HUD kept quiet.
+    // Framed from the north looking south, so the frame reads downtown in
+    // the foreground, the beach, then a blue band of water at the far edge —
+    // the coastal city in one shot, not a beige grid from directly above.
     state.started = true;
     game.menus.hide();
     game.hud.setObjective('');
     game.updateSteps(30, step); // let traffic settle for a moment
-    const half = game.city.bounds.maxX;
-    game.camera.position.set(half * 0.5, 250, half * 0.6);
-    game.camera.lookAt(0, 0, -half * 0.15);
+    game.camera.position.set(0, 200, -100);
+    game.camera.lookAt(0, 0, 120);
     return;
   }
 

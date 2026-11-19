@@ -19,6 +19,7 @@ export class HUD {
       '#solbay-health{width:200px;height:12px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.5);border-radius:6px;margin-top:8px;overflow:hidden}',
       '#solbay-health-fill{height:100%;width:100%;background:#37c24a;transition:width .2s}',
       '#solbay-money{font-size:22px;font-weight:700;margin-top:6px}',
+      '#solbay-missions{font-size:13px;font-weight:700;letter-spacing:1px;color:#ffd23f;margin-top:4px}',
       '#solbay-minimap{position:absolute;top:14px;right:16px;border:2px solid rgba(255,255,255,.55);border-radius:50%;background:rgba(10,20,30,.85);box-shadow:0 2px 10px rgba(0,0,0,.5)}',
       '#solbay-objective{position:absolute;top:14px;left:50%;transform:translateX(-50%);text-align:center;text-shadow:0 1px 4px rgba(0,0,0,.8)}',
       '#solbay-objective-title{font-size:15px;font-weight:700;letter-spacing:2px;color:#ffd23f}',
@@ -40,7 +41,7 @@ export class HUD {
       '<div id="solbay-vignette"></div>',
       '<div id="solbay-topleft"><div id="solbay-stars"></div>',
       '<div id="solbay-health"><div id="solbay-health-fill"></div></div>',
-      '<div id="solbay-money">$0</div></div>',
+      '<div id="solbay-money">$0</div><div id="solbay-missions">MISSIONS 0/5</div></div>',
       '<canvas id="solbay-minimap" width="220" height="220"></canvas>',
       '<div id="solbay-objective"><div id="solbay-objective-title"></div><div id="solbay-objective-text"></div></div>',
       '<div id="solbay-speed"><div id="solbay-speed-num"></div><div id="solbay-speed-label"></div></div>',
@@ -54,6 +55,7 @@ export class HUD {
     this.starsEl = root.querySelector('#solbay-stars');
     this.healthFill = root.querySelector('#solbay-health-fill');
     this.moneyEl = root.querySelector('#solbay-money');
+    this.missionsEl = root.querySelector('#solbay-missions');
     this.mapCanvas = root.querySelector('#solbay-minimap');
     this.mapCtx = this.mapCanvas.getContext('2d');
     this.objTitleEl = root.querySelector('#solbay-objective-title');
@@ -217,6 +219,11 @@ export class HUD {
     if (this.moneyEl) {
       const text = '$' + Math.floor(state.money).toLocaleString('en-US');
       if (this.moneyEl.textContent !== text) this.moneyEl.textContent = text;
+    }
+    if (this.missionsEl) {
+      const done = (state.missionsDone || []).length;
+      const text = 'MISSIONS ' + done + '/5';
+      if (this.missionsEl.textContent !== text) this.missionsEl.textContent = text;
     }
     // Speed + vehicle name.
     const player = this.game.player;
