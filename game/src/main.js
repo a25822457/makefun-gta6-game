@@ -14,6 +14,7 @@ import { CombatSystem } from './combat.js';
 import { MissionSystem } from './missions.js';
 import { SideJobSystem } from './sidejobs.js';
 import { ReputationSystem } from './reputation.js';
+import { ShopsSystem } from './shops.js';
 import { HUD } from './hud.js';
 import { AudioSystem } from './audio.js';
 import { MenuSystem } from './menus.js';
@@ -76,6 +77,7 @@ class Game {
     this.missions = new MissionSystem(game);
     this.sidejobs = new SideJobSystem(game);
     this.reputation = new ReputationSystem(game);
+    this.shops = new ShopsSystem(game);
 
     // Player starts at the marina spawn point.
     const spawn = this.city.spawnPoints.player;
@@ -126,6 +128,18 @@ class Game {
       this.player.cameraYaw = this.player.heading;
     }
     if (saved.timeOfDay) this.state.timeOfDay = saved.timeOfDay;
+    if (typeof saved.armor === 'number') this.state.armor = Math.max(0, Math.min(100, saved.armor));
+    if (saved.weapons && typeof saved.weapons === 'object') {
+      if (typeof saved.weapons.current === 'string') this.state.weapons.current = saved.weapons.current;
+      if (saved.weapons.smg) {
+        this.state.weapons.smg.owned = !!saved.weapons.smg.owned;
+        this.state.weapons.smg.ammo = saved.weapons.smg.ammo || 0;
+      }
+      if (saved.weapons.shotgun) {
+        this.state.weapons.shotgun.owned = !!saved.weapons.shotgun.owned;
+        this.state.weapons.shotgun.ammo = saved.weapons.shotgun.ammo || 0;
+      }
+    }
     if (typeof saved.reputation === 'number' && this.reputation) {
       this.reputation.setPoints(saved.reputation);
     }
@@ -134,6 +148,9 @@ class Game {
   /** One fixed simulation step. */
   step(dt) {
     this.state.time += dt;
+    // The world clock drifts forward: one game-hour every two real minutes,
+    // so a long session moves from golden dusk into the night.
+    this.state.timeOfDay = (16.5 + this.state.time / 120) % 24;
     this.player.update(dt);
     this.vehicles.update(dt);
     this.traffic.update(dt);
@@ -142,6 +159,7 @@ class Game {
     this.combat.update(dt);
     this.missions.update(dt);
     this.sidejobs.update(dt);
+    this.shops.update(dt);
     this.hud.update(dt);
     this.audio.update(dt);
     this.updateCamera(dt);
@@ -187,9 +205,12 @@ class Game {
     const dt = Math.min((now - this.clock.last) / 1000, 0.1);
     this.clock.last = now;
     // Pause toggle (checked here, not in step(), so it also works while
-    // already paused — step() never runs then).
+    // already paused — step() never runs then). The shop menu owns Escape
+    // while it is open, so the pause toggle must not fire under it.
     if (this.state.started && !this.state.endState && this.input.wasPressed(CONFIG.keys.pause)) {
-      if (this.state.paused) {
+      if (this.shops && this.shops.isOpen()) {
+        this.shops.close();
+      } else if (this.state.paused) {
         this.state.paused = false;
         this.menus.hide();
       } else {
