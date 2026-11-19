@@ -20,6 +20,12 @@ export class HUD {
       '#solbay-health-fill{height:100%;width:100%;background:#37c24a;transition:width .2s}',
       '#solbay-money{font-size:22px;font-weight:700;margin-top:6px}',
       '#solbay-missions{font-size:13px;font-weight:700;letter-spacing:1px;color:#ffd23f;margin-top:4px}',
+      '#solbay-respect{font-size:12px;font-weight:700;letter-spacing:1px;color:#8fd3ff;margin-top:4px}',
+      '#solbay-respect-bar{width:200px;height:6px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.4);border-radius:3px;margin-top:3px;overflow:hidden}',
+      '#solbay-respect-fill{height:100%;width:0%;background:#8fd3ff}',
+      '#solbay-radio{position:absolute;left:16px;bottom:52px;font-size:13px;font-weight:700;letter-spacing:1px;color:#ffd23f;text-shadow:0 1px 3px rgba(0,0,0,.8)}',
+      '#solbay-dialogue{position:absolute;left:50%;bottom:230px;transform:translateX(-50%);background:rgba(10,16,24,.88);border-left:4px solid #ffd23f;border-radius:4px;padding:10px 18px;font-size:16px;line-height:1.45;max-width:640px;text-align:left;opacity:0;transition:opacity .3s}',
+      '#solbay-dialogue .who{font-weight:800;letter-spacing:1px;color:#ffd23f;margin-right:8px}',
       '#solbay-minimap{position:absolute;top:14px;right:16px;border:2px solid rgba(255,255,255,.55);border-radius:50%;background:rgba(10,20,30,.85);box-shadow:0 2px 10px rgba(0,0,0,.5)}',
       '#solbay-objective{position:absolute;top:14px;left:50%;transform:translateX(-50%);text-align:center;text-shadow:0 1px 4px rgba(0,0,0,.8)}',
       '#solbay-objective-title{font-size:15px;font-weight:700;letter-spacing:2px;color:#ffd23f}',
@@ -41,14 +47,16 @@ export class HUD {
       '<div id="solbay-vignette"></div>',
       '<div id="solbay-topleft"><div id="solbay-stars"></div>',
       '<div id="solbay-health"><div id="solbay-health-fill"></div></div>',
-      '<div id="solbay-money">$0</div><div id="solbay-missions">MISSIONS 0/5</div></div>',
+      '<div id="solbay-money">$0</div><div id="solbay-missions">MISSIONS 0/8</div><div id="solbay-respect">RESPECT Lv.1 NOBODY</div><div id="solbay-respect-bar"><div id="solbay-respect-fill"></div></div></div>',
       '<canvas id="solbay-minimap" width="220" height="220"></canvas>',
       '<div id="solbay-objective"><div id="solbay-objective-title"></div><div id="solbay-objective-text"></div></div>',
       '<div id="solbay-speed"><div id="solbay-speed-num"></div><div id="solbay-speed-label"></div></div>',
       '<div id="solbay-prompt"></div>',
       '<div id="solbay-toast"></div>',
+      '<div id="solbay-dialogue"></div>',
+      '<div id="solbay-radio"></div>',
       '<div id="solbay-crosshair"></div>',
-      '<div id="solbay-help">WASD move / drive &nbsp;·&nbsp; E enter car &nbsp;·&nbsp; F punch &nbsp;·&nbsp; Mouse shoot &nbsp;·&nbsp; M music &nbsp;·&nbsp; Esc pause</div>',
+      '<div id="solbay-help">WASD move / drive &nbsp;·&nbsp; E enter car &nbsp;·&nbsp; F punch &nbsp;·&nbsp; Mouse shoot &nbsp;·&nbsp; R radio &nbsp;·&nbsp; M music &nbsp;·&nbsp; Esc pause</div>',
     ].join('');
     document.body.appendChild(root);
     this.root = root;
@@ -64,9 +72,14 @@ export class HUD {
     this.speedLabelEl = root.querySelector('#solbay-speed-label');
     this.promptEl = root.querySelector('#solbay-prompt');
     this.toastEl = root.querySelector('#solbay-toast');
+    this.dialogueEl = root.querySelector('#solbay-dialogue');
+    this.respectEl = root.querySelector('#solbay-respect');
+    this.respectFill = root.querySelector('#solbay-respect-fill');
+    this.radioEl = root.querySelector('#solbay-radio');
     this.vignetteEl = root.querySelector('#solbay-vignette');
     this.crosshairEl = root.querySelector('#solbay-crosshair');
     this.helpEl = root.querySelector('#solbay-help');
+    this._dialogueTimer = null;
     this._mapTime = 0;
   }
 
@@ -83,6 +96,49 @@ export class HUD {
     this.toastEl.style.opacity = '1';
     if (this._toastTimer) clearTimeout(this._toastTimer);
     this._toastTimer = setTimeout(() => { this.toastEl.style.opacity = '0'; }, 4200);
+  }
+
+  /** A toast that stays up until something else replaces it (staging only). */
+  toastSticky(msg) {
+    if (!this.toastEl || !msg) return;
+    if (this._toastTimer) { clearTimeout(this._toastTimer); this._toastTimer = null; }
+    this.toastEl.textContent = msg;
+    this.toastEl.style.opacity = '1';
+  }
+
+  /** A character speaks: "DELIA: ..." in a dialogue bar. Fades after 5 s. */
+  dialogue(speaker, line) {
+    if (!this.dialogueEl || !speaker || !line) return;
+    this.dialogueEl.innerHTML = '';
+    const who = document.createElement('span');
+    who.className = 'who';
+    who.textContent = String(speaker).toUpperCase() + ':';
+    this.dialogueEl.appendChild(who);
+    this.dialogueEl.appendChild(document.createTextNode(' ' + line));
+    this.dialogueEl.style.opacity = '1';
+    if (this._dialogueTimer) clearTimeout(this._dialogueTimer);
+    this._dialogueTimer = setTimeout(() => { this.dialogueEl.style.opacity = '0'; }, 5000);
+  }
+
+  /** A dialogue line that stays up (screenshot staging only). */
+  dialogueSticky(speaker, line) {
+    if (!this.dialogueEl || !speaker || !line) return;
+    if (this._dialogueTimer) { clearTimeout(this._dialogueTimer); this._dialogueTimer = null; }
+    this.dialogueEl.innerHTML = '';
+    const who = document.createElement('span');
+    who.className = 'who';
+    who.textContent = String(speaker).toUpperCase() + ':';
+    this.dialogueEl.appendChild(who);
+    this.dialogueEl.appendChild(document.createTextNode(' ' + line));
+    this.dialogueEl.style.opacity = '1';
+  }
+
+  /** Radio readout: "RADIO · BAY 98.5 — Sunset Drive". */
+  setRadio(stationName, trackName) {
+    if (!this.radioEl) return;
+    this.radioEl.textContent = stationName
+      ? 'RADIO · ' + stationName + (trackName ? ' — ' + trackName : '')
+      : '';
   }
 
   flashDamage() {
@@ -222,8 +278,18 @@ export class HUD {
     }
     if (this.missionsEl) {
       const done = (state.missionsDone || []).length;
-      const text = 'MISSIONS ' + done + '/5';
+      const total = (this.game.missions && this.game.missions.list) ? this.game.missions.list.length : 8;
+      const text = 'MISSIONS ' + done + '/' + total;
       if (this.missionsEl.textContent !== text) this.missionsEl.textContent = text;
+    }
+    // Respect level + title + progress.
+    if (this.respectEl) {
+      const rep = this.game.reputation;
+      if (rep) {
+        const text = 'RESPECT Lv.' + rep.level + ' ' + rep.title().toUpperCase();
+        if (this.respectEl.textContent !== text) this.respectEl.textContent = text;
+        if (this.respectFill) this.respectFill.style.width = Math.round(rep.progress() * 100) + '%';
+      }
     }
     // Speed + vehicle name.
     const player = this.game.player;
