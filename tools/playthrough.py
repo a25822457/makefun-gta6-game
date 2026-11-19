@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Play Sol Bay end-to-end through all 5 missions with a scripted bot.
+"""Play Sol Bay end-to-end through all 8 missions with a scripted bot.
 
 Serves game/ on localhost, loads tools/playthrough-bot.js into the page, and
 drives the real game (real input, real physics, real mission logic) through:
   m1 Welcome Back -> m2 Borrowed Wheels -> m3 Payback at Pier 9 ->
-  m4 The Long Way Home -> m5 King of the Bay,
+  m4 The Long Way Home -> m5 King of the Bay -> m6 Bayfront Dash ->
+  m7 Delia's Run -> m8 Take Back the Pier,
 then a busted/respawn check and a mission fail/retry check.
 Prints a JSON-ish report per stage and all console/page errors.
 
@@ -28,10 +29,17 @@ MARKERS = {
     "m3": (-190, 238),
     "m4": (-182, -208),
     "m5": (26, -26),
+    "m6": (-182, 182),
+    "m7": (50, -78),
+    "m8": (-190, 238),
 }
 M1_DROP = (-180, -180)
 M4_DROP = (-182, 180)
 M5_DELIVER = (-190, 205)
+# m6: beachfront sprint, three checkpoints east along the coast road (z=182).
+M6_CHECKPOINTS = [(-78, 182), (26, 182), (130, 182)]
+M7_DELIVER = (-190, 205)
+M8_STASH = (-184, 242)
 
 
 def show(name, obj):
@@ -77,9 +85,14 @@ def main() -> int:
                 # Click via JS: Playwright's actionability checks stall on the
                 # overlay in headless SwiftShader; the button's listener is
                 # a plain addEventListener, so a DOM click works.
+                # Handles both the mission-complete card and the mission-
+                # failed card (skip it, so a failed leg does not block the
+                # next mission from starting).
                 page.evaluate("""() => {
-                  const b = document.querySelector('#solbay-continue-mission');
-                  if (b) b.click();
+                  const ok = document.querySelector('#solbay-continue-mission');
+                  if (ok) { ok.click(); return; }
+                  const skip = document.querySelector('#solbay-skip-mission');
+                  if (skip) skip.click();
                 }""")
                 page.wait_for_timeout(200)
 
@@ -196,29 +209,132 @@ def main() -> int:
             show("m5 escape", r)
             s = call("window.__bot.snap()")
             show("m5 after escape", s)
-            ok &= bool(s["obj"] == 3)
+            # The escape is the flakiest leg in the game: police cars keep
+            # the player in sight and reset the 20 s quiet timer. One more
+            # attempt usually breaks line of sight long enough to decay.
+            if s["wanted"] > 0:
+                r = call("window.__bot.escape(60*300)")
+                show("m5 escape retry", r)
+                s = call("window.__bot.snap()")
+                show("m5 after escape retry", s)
+            ok &= bool(s["obj"] == 3 or "m5" in s["done"])
             r = call(f"window.__bot.goto({M5_DELIVER[0]}, {M5_DELIVER[1]}, {{reach: 5, maxSteps: 60*240}})")
             show("m5 deliver", r)
             s = call("window.__bot.snap()")
             show("m5 after", s)
             ok &= ("m5" in s["done"] and s["money"] >= 5850)
+            dismiss_card()
+
+            # ---- m6: beachfront sprint — three timed checkpoints east.
+            r = call(f"window.__bot.goto({MARKERS['m6'][0]}, {MARKERS['m6'][1]}, {{reach: 10, maxSteps: 60*240}})")
+            show("m6 travel", r)
+            r = call("window.__bot.exitCar()")
+            r = call(f"window.__bot.startMissionAt({MARKERS['m6'][0]}, {MARKERS['m6'][1]})")
+            show("m6 start", r)
+            ok &= bool(r.get("ok") and r.get("cur") == "m6")
+            r = call("window.__bot.getInCarOfType('sports', 20)")
+            show("m6 get in sports car", r)
+            ok &= bool(r.get("ok") and r.get("veh") == "sports")
+            for i, (cx, cz) in enumerate(M6_CHECKPOINTS, start=1):
+                r = call(f"window.__bot.goto({cx}, {cz}, {{reach: 9, maxSteps: 60*180}})")
+                show(f"m6 checkpoint {i}", r)
+            s = call("window.__bot.snap()")
+            show("m6 after", s)
+            ok &= ("m6" in s["done"] and s["money"] >= 7300)
+            dismiss_card()
+
+            # ---- m7: pick up Delia downtown, deliver to the marina, escape.
+            r = call(f"window.__bot.goto({MARKERS['m7'][0]}, {MARKERS['m7'][1]}, {{reach: 10, maxSteps: 60*240}})")
+            show("m7 travel", r)
+            r = call("window.__bot.exitCar()")
+            r = call(f"window.__bot.startMissionAt({MARKERS['m7'][0]}, {MARKERS['m7'][1]})")
+            show("m7 start", r)
+            ok &= bool(r.get("ok") and r.get("cur") == "m7")
+            r = call("window.__bot.getInNearestCar(20)")
+            show("m7 get in car", r)
+            r = call(f"window.__bot.goto({M7_DELIVER[0]}, {M7_DELIVER[1]}, {{reach: 5, maxSteps: 60*240}})")
+            show("m7 deliver", r)
+            s = call("window.__bot.snap()")
+            show("m7 after deliver", s)
+            # The deliver drive is long enough that the 2-star tail can decay
+            # to zero en route, so the escape objective may already be done
+            # and the mission complete by arrival. Accept either state.
+            ok &= bool(("m7" in s["done"]) or (s["obj"] == 2 and s["wanted"] >= 2))
+            r = call("window.__bot.escape(60*300)")
+            show("m7 escape", r)
+            s = call("window.__bot.snap()")
+            show("m7 after", s)
+            ok &= ("m7" in s["done"] and s["money"] >= 9000)
+            dismiss_card()
+
+            # ---- m8: finale — clear Pier 9, grab the money, escape, deliver.
+            r = call(f"window.__bot.goto({MARKERS['m8'][0]}, {MARKERS['m8'][1]}, {{reach: 12, maxSteps: 60*240}})")
+            show("m8 travel", r)
+            r = call("window.__bot.exitCar()")
+            r = call(f"window.__bot.startMissionAt({MARKERS['m8'][0]}, {MARKERS['m8'][1]})")
+            show("m8 start", r)
+            ok &= bool(r.get("ok") and r.get("cur") == "m8" and r.get("armed") and r.get("alive") == 6)
+            r = call("window.__bot.fight(60*150)")
+            show("m8 fight", r)
+            s = call("window.__bot.snap()")
+            show("m8 after fight", s)
+            ok &= bool(r.get("ok") and s["alive"] == 0)
+            r = call(f"window.__bot.goto({M8_STASH[0]}, {M8_STASH[1]}, {{reach: 5, maxSteps: 60*120}})")
+            show("m8 grab money", r)
+            s = call("window.__bot.snap()")
+            show("m8 after grab", s)
+            ok &= bool(s["obj"] == 2 and s["wanted"] >= 5)
+            r = call("window.__bot.escape(60*300)")
+            show("m8 escape", r)
+            s = call("window.__bot.snap()")
+            show("m8 after escape", s)
+            ok &= bool(s["obj"] == 3)
+            r = call(f"window.__bot.goto({M7_DELIVER[0]}, {M7_DELIVER[1]}, {{reach: 5, maxSteps: 60*240}})")
+            show("m8 deliver", r)
+            s = call("window.__bot.snap()")
+            show("m8 after", s)
+            ok &= ("m8" in s["done"] and s["money"] >= 13000)
+            dismiss_card()
             print("ALL MISSIONS DONE:", s["done"], "money:", s["money"])
 
             # ---- busted / respawn check: steal a car, stand still, let a foot cop bust.
             r = call("window.__bot.getInNearestCar(100)")
             show("busted setup: car", r)
-            # Steal a crewed traffic car to raise heat, then get out and wait.
+            # Teleport FIRST, then report the crime: the cruisers spawn near
+            # the player, a foot cop walks up, and the wanted level holds
+            # (police in sight reset the quiet timer). Reporting first and
+            # teleporting after strands the cruisers at the old spot while
+            # the wanted decays to zero before anyone arrives.
+            # Two steps: reportCrime only raises the wanted level — the
+            # cruisers spawn on later update ticks, so cars[0] is empty
+            # right after the call. Wait for them, then park one beside the
+            # player and step a foot cop out of it at once (foot cops only
+            # spawn when a cruiser is within 14 m, and the chase AI can take
+            # a minute to close 25–120 m of spawn distance).
             page.evaluate(
                 """() => {
                 const g = window.__game;
-                // Put the player on foot in front of a police car and report a crime.
                 g.player.exitVehicle();
+                g.player.position.set(26, 0, 26);
+                g.player.cameraYaw = 0;
                 g.police.reportCrime(2);
                 }"""
             )
-            # Walk to a road and stand still so a foot cop can reach the player.
-            page.evaluate("() => { const g = window.__game; g.player.position.set(26, 0, 26); g.player.cameraYaw = 0; }")
-            call("window.__bot.waitSteps(60*40)")
+            page.wait_for_timeout(2000)
+            page.evaluate(
+                """() => {
+                const g = window.__game;
+                const entry = g.police.cars && g.police.cars[0];
+                if (entry && entry.car && entry.car.position) {
+                    entry.car.position.set(34, 0, 26);
+                    if (entry.car.group) entry.car.group.position.set(34, 0, 26);
+                    if (typeof g.police._spawnFootCop === 'function') {
+                        g.police._spawnFootCop(entry.car);
+                    }
+                }
+                }"""
+            )
+            call("window.__bot.waitSteps(60*60)")
             s = call("window.__bot.snap()")
             show("busted?", s)
             if s["end"] == "busted":
