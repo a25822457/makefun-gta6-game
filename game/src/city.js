@@ -477,6 +477,13 @@ export function buildCity(scene, rng) {
       // corner of the city, reachable on foot and by car.
       m4: { x: -182, z: -208 },
       m5: { x: 26, z: -26 },
+      // m6: the beachfront sprint starts at the west end of the coast road
+      // (z=182, a real road — z=154 is the middle of a block).
+      m6: { x: -182, z: 182 },
+      // m7: Delia's downtown hideout, on the x=50 / z=-78 crossroads.
+      m7: { x: 50, z: -78 },
+      // m8: back to Pier 9, where m3 was — the finale takes the pier back.
+      m8: { x: -190, z: 238 },
     },
     police: [
       { x: 26, z: 26 }, { x: -26, z: 78 }, { x: 78, z: -26 }, { x: -78, z: -78 },
