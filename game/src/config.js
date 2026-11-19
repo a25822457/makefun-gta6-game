@@ -16,10 +16,11 @@ export const CONFIG = {
   },
 
   // Sun-soaked coastal palette: warm stucco, glass blue, brick, palm green.
+  // The fog and sun lean warm — Sol Bay at dusk, the bay going gold.
   palette: {
     sky: 0x87b5d6,
-    fog: 0xc7d3de,
-    sun: 0xffd9a0,
+    fog: 0xd8c9b8,
+    sun: 0xffc98a,
     asphalt: 0x33363c,
     sidewalk: 0x9a938a,
     sand: 0xe0c98f,
@@ -94,7 +95,7 @@ export const CONFIG = {
     handbrake: 'Space',
     interact: 'KeyE',
     punch: 'KeyF',
-    reload: 'KeyR',
+    radio: 'KeyR',
     mute: 'KeyM',
     pause: 'Escape',
     help: 'KeyH',
