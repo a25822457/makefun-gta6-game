@@ -2,6 +2,12 @@
 // Each scene builds the real world from the seed, plays it forward a fixed
 // number of steps at a fixed dt, then freezes — so the same seed always gives
 // the same frame. The main loop renders the frozen frame.
+//
+// These are directed shots, not candid gameplay: every frame is composed
+// like a poster — a low close camera, the action filling the frame, and a
+// line of dialogue or a toast that tells the story. The scenes are Sol
+// Bay's own moments (the marina chase, Pier 9, the beachfront), staged
+// with Sol Bay's own cars, characters and places.
 import { CONFIG } from './config.js';
 
 /** Hold W (drive forward) while the staging sim runs: the pilot for shots. */
@@ -21,10 +27,39 @@ function placePlayerInCar(game, type, x, z, heading) {
   return car;
 }
 
-/**
- * Stage the named scene and return the screen to show over it. Any other name
- * is the start scene. Runs only in shot mode, before the loop freezes.
- */
+/** A soft grey smoke puff, frozen in the frame (staging only). */
+function addSmokePuff(game, x, y, z, scale, opacity) {
+  if (!game.scene || typeof THREE === 'undefined') return null;
+  const mesh = new THREE.Mesh(
+    new THREE.SphereGeometry(1, 8, 6),
+    new THREE.MeshBasicMaterial({ color: 0xd8d8d8, transparent: true, opacity, depthWrite: false }),
+  );
+  mesh.position.set(x, y, z);
+  mesh.scale.setScalar(scale);
+  game.scene.add(mesh);
+  return mesh;
+}
+
+/** A frozen explosion: hot core, orange glow, smoke rising (staging only). */
+function addFireball(game, x, y, z) {
+  if (!game.scene || typeof THREE === 'undefined') return;
+  const core = new THREE.Mesh(
+    new THREE.SphereGeometry(1.6, 12, 10),
+    new THREE.MeshBasicMaterial({ color: 0xffdd66 }),
+  );
+  core.position.set(x, y + 1.2, z);
+  game.scene.add(core);
+  const glow = new THREE.Mesh(
+    new THREE.SphereGeometry(2.8, 12, 10),
+    new THREE.MeshBasicMaterial({ color: 0xff7722, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }),
+  );
+  glow.position.set(x, y + 1.2, z);
+  game.scene.add(glow);
+  addSmokePuff(game, x, y + 3.5, z, 2.2, 0.5);
+  addSmokePuff(game, x + 1.2, y + 4.8, z + 0.5, 1.7, 0.4);
+  addSmokePuff(game, x - 1, y + 5.8, z - 0.5, 1.4, 0.35);
+}
+
 /** Remove traffic cars in the driving corridor ahead of (x, z0) down to z1. */
 function clearCorridor(game, x, z0, z1, halfWidth) {
   const traffic = game.traffic;
@@ -95,6 +130,33 @@ function frameChase(game) {
   });
 }
 
+/**
+ * The cover camera: low, close, and tilted a touch. The default follow
+ * camera sits high and far, which leaves the bottom two thirds of the frame
+ * as empty black road. This one crouches behind the car — the car fills the
+ * lower frame, the roadblock and the helicopter read above it — and rolls a
+ * few degrees so the chase feels off-balance.
+ */
+function frameCoverCamera(game) {
+  const p = game.player.position;
+  const h = game.player.heading;
+  const fx = -Math.sin(h), fz = -Math.cos(h); // forward
+  const rx = Math.cos(h), rz = -Math.sin(h); // right
+  const cam = game.camera;
+  // Behind the car, low, slightly to the right so the car sits left of centre.
+  cam.position.set(
+    p.x - fx * 7.5 + rx * 2.2,
+    2.3,
+    p.z - fz * 7.5 + rz * 2.2,
+  );
+  cam.lookAt(p.x + fx * 10, 1.4, p.z + fz * 10);
+  cam.rotateZ(0.06); // a slight Dutch tilt — the chase is off-balance
+}
+
+/**
+ * Stage the named scene and return the screen to show over it. Any other name
+ * is the start scene. Runs only in shot mode, before the loop freezes.
+ */
 export function stageShot(name, game) {
   const step = CONFIG.shotStep;
   const state = game.state;
@@ -103,6 +165,8 @@ export function stageShot(name, game) {
 
   if (name === 'chase') {
     // Cover: a police chase down the main avenue, HUD and minimap live.
+    // The Bay Patrol helicopter is overhead, two cruisers are on the tail,
+    // and a roadblock waits ahead — the whole bay is looking for Rook.
     state.started = true;
     game.menus.hide();
     const avenue = spawn.cars[0] || { x: 0, z: 0, heading: 0 };
@@ -112,7 +176,8 @@ export function stageShot(name, game) {
     game.police.reportCrime(3);
     state.missionObjective = 'Lose the cops — reach the hideout';
     game.hud.setObjective('Lose the cops — reach the hideout');
-    game.hud.toast('3 stars — the whole bay is looking for you.');
+    game.hud.toastSticky('BAY PATROL overhead — 3 stars and climbing!');
+    game.hud.dialogueSticky('Delia', 'Rook, the whole bay is looking for you. Don\'t stop!');
     holdDrive(game, true);
     game.updateSteps(75, step); // 2.5 s of chase: fast, before cruisers catch up
     holdDrive(game, false);
@@ -123,22 +188,62 @@ export function stageShot(name, game) {
     }
     frameChase(game);
     clearTrafficNear(game, 20);
+    // The Bay Patrol chopper, at its natural scale, high and ahead so it
+    // reads in the sky above the roadblock — not blown up, not the star.
+    // Height 20, nearly over the road centre: at 16 and 14 m to the side it
+    // sat behind the roadside towers and never read in the frame.
+    if (game.helicopter) {
+      const p = game.player.position;
+      const h = game.player.heading;
+      const fx = -Math.sin(h), fz = -Math.cos(h);
+      const rx = Math.cos(h), rz = -Math.sin(h);
+      game.helicopter.placeForShot(
+        p.x + fx * 30 + rx * 4,
+        p.z + fz * 30 + rz * 4,
+        20,
+      );
+    }
+    // Tire smoke off the rear wheels — the car is sliding, not cruising.
+    // Small, faint wisps: the camera sits only ~5 m behind the car, so
+    // full-size puffs read as a fog bank and swallow the car.
+    {
+      const p = game.player.position;
+      const h = game.player.heading;
+      const fx = -Math.sin(h), fz = -Math.cos(h);
+      const rx = Math.cos(h), rz = -Math.sin(h);
+      for (const side of [-1, 1]) {
+        const bx = p.x - fx * 2.2 + rx * side * 0.9;
+        const bz = p.z - fz * 2.2 + rz * side * 0.9;
+        addSmokePuff(game, bx, 0.5, bz, 0.7, 0.3);
+        addSmokePuff(game, bx - fx * 1.2, 0.8, bz - fz * 1.2, 0.9, 0.22);
+      }
+    }
+    frameCoverCamera(game);
     return;
   }
 
   if (name === 'mission') {
-    // On foot at Pier 9, mid-shootout, mission 3 active.
+    // On foot at Pier 9, mid-shootout — the finale (m8), six Breakers
+    // holding the pier, a van going up in flames. The player and the
+    // Breakers trade tracers; Delia talks Rook through it.
     state.started = true;
     game.menus.hide();
-    const m3 = spawn.missions.m3 || { x: 0, z: 0 };
-    game.player.position.set(m3.x, 0, m3.z + 14);
+    const m8 = spawn.missions.m8 || spawn.missions.m3 || { x: 0, z: 0 };
+    game.player.position.set(m8.x, 0, m8.z + 14);
     game.player.heading = 0;
     game.player.cameraYaw = 0;
     state.player.armed = true;
-    missions.start('m3');
-    game.hud.setObjective('Clear the pier warehouse — grab the package');
+    missions.start('m8');
+    game.hud.setObjective('Take back Pier 9 — clear the Breakers');
+    game.hud.dialogueSticky('Delia', 'Take the pier back, Rook. All of it.');
     holdDrive(game, false);
     game.updateSteps(90, step); // 3 s of shootout
+    // A Breaker van catches fire beside the warehouse — the explosion the
+    // shootout builds to, frozen mid-blast.
+    {
+      const p = game.player.position;
+      addFireball(game, p.x + 8, 0, p.z - 6);
+    }
     // Reframe to a fixed three-quarter angle from the north: the follow
     // camera sits right behind the player staring at the marker beacon, so
     // the beacon fills the centre of the frame, and a camera south of the
@@ -153,16 +258,27 @@ export function stageShot(name, game) {
   }
 
   if (name === 'city') {
-    // High aerial of downtown and the beach at sunset, HUD kept quiet.
-    // Framed from the north looking south, so the frame reads downtown in
-    // the foreground, the beach, then a blue band of water at the far edge —
-    // the coastal city in one shot, not a beige grid from directly above.
+    // A low aerial over the beachfront at dusk: downtown in the foreground,
+    // the beach and a blue band of water beyond it. Close enough that the
+    // traffic, the pedestrians and a patrol cruiser read in the frame —
+    // a city that is awake, not a beige grid from directly above.
     state.started = true;
     game.menus.hide();
     game.hud.setObjective('');
+    game.hud.toastSticky('Sol Bay — the whole city is awake.');
     game.updateSteps(30, step); // let traffic settle for a moment
-    game.camera.position.set(0, 200, -100);
-    game.camera.lookAt(0, 0, 120);
+    // Put a patrol cruiser on the beachfront road so the frame has a
+    // police presence, not just traffic.
+    if (game.police) {
+      game.police.reportCrime(1);
+      game.updateSteps(30, step);
+      const cruisers = game.police.cars || [];
+      if (cruisers.length > 0) {
+        placeCruiser(cruisers[0], 50, 154, Math.PI / 2);
+      }
+    }
+    game.camera.position.set(-40, 70, -40);
+    game.camera.lookAt(20, 0, 140);
     return;
   }
 
