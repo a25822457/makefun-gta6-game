@@ -42,7 +42,7 @@ game/src/hud.js            [story] DOM HUD: stars, health, money, speed, objecti
 game/src/audio.js          [story] WebAudio synth: engine, siren, shots, jingles, music
 game/src/menus.js          [story] start screen, pause, busted/wasted, mission cards
 game/src/save.js           [story] localStorage save/load (key solbay-save-v1)
-game/src/shots.js          [coord] ?shot= staging: start / chase / mission / city
+game/src/shots.js          [coord] ?shot= staging: chase / city / mission / shop
 ```
 `[city]` = city agent, `[drive]` = vehicles+player agent, `[law]` = traffic+police
 agent, `[story]` = missions+HUD agent, `[coord]` = coordinator (me).
@@ -112,12 +112,16 @@ agent, `[story]` = missions+HUD agent, `[coord]` = coordinator (me).
   (slow synth bassline + pad, M to mute). AudioContext starts on first gesture.
 
 ## Screenshots (`shots.js`, `shots.json`)
-`?shot=start|chase|mission|city&seed=1`, fixed dt 1/30, seeded world:
-- `start`: title screen over downtown at dusk.
+`?shot=chase|city|mission|shop&seed=1`, fixed dt 1/30, seeded world:
 - `chase` (COVER, first by name): player driving a sports car down the main
   avenue, 3-star wanted, two police cars in pursuit, HUD + minimap + objective.
+- `city`: low aerial of downtown + beach at sunset, traffic and a patrol
+  cruiser reading in the foreground.
 - `mission`: on foot at Pier 9, mission 3 active, rivals visible, objective banner.
-- `city`: high aerial of downtown + beach at sunset.
+- `shop`: on foot at Harbor Arms, the gun shop's sign and ring, the "Press E"
+  prompt, HUD + minimap. Round 7 replaced the title-screen shot: a menu
+  alone shows less than a shot of a system, and the shop was round 6's
+  headline feature with no screenshot showing it.
 Each shot must show several systems at once and stay readable at 300 px.
 
 ## Performance budget
