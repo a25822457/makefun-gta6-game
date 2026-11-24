@@ -20,6 +20,7 @@ import { AudioSystem } from './audio.js';
 import { MenuSystem } from './menus.js';
 import { SaveSystem } from './save.js';
 import { stageShot } from './shots.js';
+import { PostFX } from './postfx.js';
 
 // Errors the page hit, kept where a playtest script can read them.
 window.__errors = [];
@@ -27,13 +28,14 @@ window.addEventListener('error', (event) => {
   window.__errors.push(String(event.message || event.error));
 });
 
-/** URL parameters: ?seed= for the world, ?shot= for a staged screenshot. */
+/** URL parameters: ?seed= for the world, ?shot= for a staged screenshot, ?postfx=0 to disable the grade. */
 function readParams() {
   const params = new URLSearchParams(window.location.search);
   const seed = Number.parseInt(params.get('seed') || '', 10);
   return {
     seed: Number.isFinite(seed) ? seed : 1337,
     shot: params.get('shot') || '',
+    postfx: params.get('postfx') !== '0',
   };
 }
 
@@ -55,6 +57,19 @@ class Game {
     this.scene.fog = new THREE.Fog(CONFIG.palette.fog, 220, 900);
     this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
     this.camera.position.set(0, 40, 80);
+
+    // Light post-processing (round 8): warm golden-hour grade + speed
+    // blur + vignette, one fullscreen pass. If the pass cannot be built,
+    // the game renders directly — it never goes black because of it.
+    this.postfx = null;
+    if (params.postfx) {
+      try {
+        this.postfx = new PostFX(this.renderer);
+        this.postfx.setSize(window.innerWidth, window.innerHeight, this.renderer.getPixelRatio());
+      } catch (e) {
+        this.postfx = null;
+      }
+    }
 
     this.config = CONFIG;
     this.state = createGameState();
@@ -104,6 +119,9 @@ class Game {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    if (this.postfx) {
+      this.postfx.setSize(window.innerWidth, window.innerHeight, this.renderer.getPixelRatio());
+    }
   }
 
   /** Start free roam from the title screen (also used by Continue). */
@@ -237,7 +255,14 @@ class Game {
     if (this.state.endState && this.menus.visible !== 'end') {
       this.menus.showEnd(this.state.endState);
     }
-    this.renderer.render(this.scene, this.camera);
+    if (this.postfx) {
+      // Speed blur follows how fast Rook is moving (m/s): near zero on
+      // foot, up to full blur at a sports car's top speed.
+      this.postfx.setSpeed(this.player ? (this.player.speed || 0) : 0);
+      this.postfx.render(this.scene, this.camera);
+    } else {
+      this.renderer.render(this.scene, this.camera);
+    }
   }
 
   boot() {
