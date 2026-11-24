@@ -43,6 +43,7 @@ game/src/audio.js          [story] WebAudio synth: engine, siren, shots, jingles
 game/src/menus.js          [story] start screen, pause, busted/wasted, mission cards
 game/src/save.js           [story] localStorage save/load (key solbay-save-v1)
 game/src/shots.js          [coord] ?shot= staging: chase / city / mission / shop
+game/src/postfx.js         [coord] light post-processing: warm grade + speed blur + vignette (one fullscreen pass)
 ```
 `[city]` = city agent, `[drive]` = vehicles+player agent, `[law]` = traffic+police
 agent, `[story]` = missions+HUD agent, `[coord]` = coordinator (me).

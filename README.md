@@ -64,6 +64,9 @@ at `game/vendor/three.min.js`).
   world clock (DAWN / DAY / DUSK / NIGHT), the district and street you are on,
   your current weapon and ammo, and a vehicle card (car type + condition)
   while driving (`game/src/hud.js`, `game/src/city.js`).
+- **Golden-hour post-processing** — a warm colour grade, a speed blur that
+  streaks the frame when you are moving fast, and a gentle vignette, all in
+  one fullscreen pass. The HUD stays crisp above it (`game/src/postfx.js`).
 - **Start screen, pause menu, and save** — localStorage save/continue,
   including your respect level (`game/src/menus.js`, `game/src/save.js`).
 - **Synthesized sound** — engine, sirens, gunshots, crashes, and the radio,
